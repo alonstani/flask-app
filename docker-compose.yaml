@@ -1,41 +1,38 @@
 
 
 services:
-  flask-app:
-    build: .
-    container_name: flask-app
-    ports:
-      - "5000:5000"
-    environment:
-      - flask_end=development
-      - DATABASE_HOST=db
-      - DATABASE_PORT=3306
-      - DATABASE_NAME=flaskdb
-      - DATABASE_USER=root
-      - DATABASE_PASSWORD=password
-    depends_on:
-      - db
-    networks:
-      - flask-net
-
   db:
     image: mysql:5.7
-    container_name: db
     environment:
-      MYSQL_ROOT_PASSWORD: password    # MySQL root password
-      MYSQL_DATABASE: flaskdb         # Initial database name
-      MYSQL_ALLOW_EMPTY_PASSWORD: "YES"
-      MYSQL_INNODB_FORCE_RECOVERY: 1
-    volumes:
-      - mysql-data:/var/lib/mysql   # Persist MySQL data
-      - ./db_init:/docker-entrypoint-initdb.d  # Mount the SQL scripts folder
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: db
     networks:
       - flask-net
+    volumes:
+      - sqldata:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d
+    ports:
+      - "3307:3306"
+
+  flask-app:
+    build: .
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=123456
+      - DB_NAME=db
+    networks:
+      - flask-net
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
 
 networks:
   flask-net:
     driver: bridge
 
 volumes:
-  mysql-data:
-    driver: local
+  sqldata:

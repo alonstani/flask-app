@@ -2,15 +2,18 @@ from flask import Flask, render_template
 import os
 import random
 import mysql.connector
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
 def get_db_connection():
     connection = mysql.connector.connect(
-        host='db',
-        user='root',
-        password='password',
-        database='flaskdb'
+        host=os.getenv('DB_HOST', 'localhost'),
+        user=os.getenv('DB_USER', 'root'),
+        password=os.getenv('DB_PASSWORD', '123456'),
+        database=os.getenv('DB_NAME', 'db')
     )
     return connection
 
@@ -32,15 +35,28 @@ images = [
 @app.route("/")
 def index():
     url = random.choice(images)
-    
-    # Example query from MySQL (could be your data logic)
+
+    # Increment visitor count
     connection = get_db_connection()
     cursor = connection.cursor()
-    cursor.execute("SELECT * FROM cats LIMIT 1")
-    cat_data = cursor.fetchone()
-    connection.close()
     
-    return render_template("index.html", url=url, cat_data=cat_data)
+    # Get current visitor count
+    cursor.execute('SELECT count FROM visitor_count WHERE id = 1')
+    current_count = cursor.fetchone()[0]
+    
+    # Increment the counter by 1
+    new_count = current_count + 1
+    cursor.execute('UPDATE visitor_count SET count = %s WHERE id = 1', (new_count,))
+    connection.commit()
+
+    # Fetch example data (could be your data logic)
+    cursor.execute('SELECT * FROM images LIMIT 1')
+    result = cursor.fetchone() 
+    cursor.close()
+    connection.close()
+
+    return render_template("index.html", url=url, cat_data=result, visitor_count=new_count)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+

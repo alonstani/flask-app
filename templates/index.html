@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <style type="text/css">
       body {
@@ -15,13 +16,17 @@
       h4 {
         text-transform: uppercase;
       }
+      small {
+        font-size: 12px;
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <h4>Cat Gif of the day</h4>
-      <img src="{{url}}" />
+      <h4>Cat Gif of the Day</h4>
+      <img src="{{ url }}" />
       <p><small>Courtesy: <a href="http://www.buzzfeed.com/copyranter/the-best-cat-gif-post-in-the-history-of-cat-gifs">Buzzfeed</a></small></p>
+      <p><strong>Visitor Count: {{ visitor_count }}</strong></p> <!-- Display Visitor Count -->
     </div>
   </body>
 </html>
