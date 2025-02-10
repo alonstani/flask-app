@@ -110,7 +110,7 @@ pipeline {
                             # Tag the image with your Docker Hub repository
                             cd flask-app
                             IMAGE_TAG="${dockerhub_repo}:${branch_name}-latest"  # Tag with the branch name and "latest"
-                            docker tag flask-app_flask-app_1 ${IMAGE_TAG}  # Tag the image from container
+                            docker tag flask-app ${IMAGE_TAG}  # Tag the image from container
                             
                             # Push the image to Docker Hub
                             docker push ${IMAGE_TAG}
@@ -128,8 +128,8 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: "${git_credentials_id}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                         sh '''
                             # Configure git with credentials
-                            git config --global user.email "your-email@example.com"
-                            git config --global user.name "Your Name"
+                            git config --global user.email "alonstani95@gmail.com"
+                            git config --global user.name "inyouk"
                             
                             cd flask-app
                             git add .  # Stage changes
