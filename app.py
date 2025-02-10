@@ -49,7 +49,7 @@ def index():
     cursor.execute('UPDATE visitor_count SET count = %s WHERE id = 1', (new_count,))
     connection.commit()
 
-    # Fetch example data (could be your data logic)
+    # Fetch example data (could be your data logic
     cursor.execute('SELECT * FROM images LIMIT 1')
     result = cursor.fetchone() 
     cursor.close()
