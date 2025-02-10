@@ -1,10 +1,18 @@
 pipeline {
     agent any
 
-    triggers {
-        pollSCM('* * * * * ')
+    environment {
+        git_repo_url = 'https://github.com/alonstani/flask-app.git'
+        branch_name = 'master'
+        git_credentials_id = 'git-credential-id'  // Add your credentials ID here
+        dockerhub_repo = 'inyouk/flask-app'  // Your Docker Hub repository
+        dockerhub_credentials_id = 'docker-credential-id'  // Jenkins credentials ID for Docker Hub
     }
-    
+
+    triggers {
+        pollSCM('* * * * *')
+    }
+
     stages {
         stage('Clean up') {
             steps {
@@ -18,7 +26,7 @@ pipeline {
         stage('Clone code') {
             steps {
                 sh 'rm -rf flask-app'
-                sh 'git clone https://github.com/alonstani/flask-app.git'
+                sh 'git clone ${git_repo_url}'
                 sh 'ls flask-app'  // This should list the directory contents after cloning
             }
         }
@@ -88,5 +96,50 @@ pipeline {
                 '''
             }
         }
+
+        // New stage to push Docker image to Docker Hub
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                script {
+                    // Login to Docker Hub using Jenkins credentials
+                    withCredentials([usernamePassword(credentialsId: "${dockerhub_credentials_id}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh '''
+                            # Log in to Docker Hub
+                            echo "${DOCKER_PASSWORD}" | docker login --username ${DOCKER_USERNAME} --password-stdin
+                            
+                            # Tag the image with your Docker Hub repository
+                            cd flask-app
+                            IMAGE_TAG="${dockerhub_repo}:${branch_name}-latest"  # Tag with the branch name and "latest"
+                            docker tag flask-app_flask-app_1 ${IMAGE_TAG}  # Tag the image from container
+                            
+                            # Push the image to Docker Hub
+                            docker push ${IMAGE_TAG}
+                        '''
+                    }
+                }
+            }
+        }
+
+        // New stage to push changes to Git (optional, if you want to commit and push code to GitHub)
+        stage('Push Code to Git') {
+            steps {
+                script {
+                    // Configuring Git credentials
+                    withCredentials([usernamePassword(credentialsId: "${git_credentials_id}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                        sh '''
+                            # Configure git with credentials
+                            git config --global user.email "your-email@example.com"
+                            git config --global user.name "Your Name"
+                            
+                            cd flask-app
+                            git add .  # Stage changes
+                            git commit -m "Automated commit from Jenkins"
+                            git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${git_repo_url.replace('https://', '')} ${branch_name}
+                        '''
+                    }
+                }
+            }
+        }
     }
 }
+
