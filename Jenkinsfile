@@ -110,10 +110,10 @@ pipeline {
                             # Tag the image with your Docker Hub repository
                             cd flask-app
                             IMAGE_TAG="${dockerhub_repo}:${branch_name}-latest"  # Tag with the branch name and "latest"
-                            docker tag flask-app ${IMAGE_TAG}  # Tag the image from container
+                            docker tag flask-app ${flask-app}  # Tag the image from container
                             
                             # Push the image to Docker Hub
-                            docker push ${IMAGE_TAG}
+                            docker push ${flask-app}
                         '''
                     }
                 }
