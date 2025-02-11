@@ -30,14 +30,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: List directory contents
+      - name: List root directory contents
         run: |
+          echo "Listing contents of the current directory"
+          pwd
           ls -alh
 
       - name: Create flask-app directory and clone repo into it
         run: |
           rm -rf flask-app  # Clean up any old directory
           git clone ${GIT_REPO_URL} flask-app
+          echo "Listing contents of flask-app directory"
           ls -alh flask-app  # Ensure that the flask-app directory was created and populated
 
   build:
@@ -54,8 +57,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd /flask-app  # Ensure we're in the flask-app directory
-          ls -alh  # List contents to confirm docker-compose.yml exists
+          echo "Current directory:"
+          pwd  # Output the current working directory
+          ls -alh  # List the current directory's contents
+          cd flask-app  # Ensure we're in the flask-app directory
+          ls -alh  # List contents of flask-app directory to ensure docker-compose.yml is present
           docker-compose build
 
   run:
@@ -88,8 +94,8 @@ jobs:
           cd flask-app  # Ensure we are in the correct directory
           
           # Check if docker-compose.yaml exists
-          if [ ! -f docker-compose.yml ]; then
-            echo "docker-compose.yml not found in flask-app directory."
+          if [ ! -f docker-compose.yaml ]; then
+            echo "docker-compose.yaml not found in flask-app directory."
             exit 1
           fi
           
@@ -151,6 +157,7 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
 
 
 
