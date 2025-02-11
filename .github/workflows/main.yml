@@ -30,6 +30,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: List directory contents
+        run: |
+          ls -alh
+
+      - name: Create flask-app directory and clone repo into it
+        run: |
+          rm -rf flask-app  # Clean up any old directory
+          git clone ${GIT_REPO_URL} flask-app
+          ls -alh flask-app  # Ensure that the flask-app directory was created and populated
+
   build:
     runs-on: ubuntu-latest
     needs: clone-code
@@ -136,3 +146,4 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
