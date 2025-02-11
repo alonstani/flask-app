@@ -9,7 +9,7 @@ on:
       - master
 
 env:
-  GIT_REPO_URL: 'gh repo clone alonstani/flask-app'
+  GIT_REPO_URL: 'https://github.com/alonstani/flask-app.git'
   BRANCH_NAME: 'master'
   GIT_CREDENTIALS_ID: 'git-credential-id'
   DOCKERHUB_REPO: 'inyouk/flask-app'
