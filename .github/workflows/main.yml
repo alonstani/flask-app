@@ -38,9 +38,8 @@ jobs:
         run: |
           rm -rf flask-app  # Clean up any old directory
           git clone ${GIT_REPO_URL} flask-app
-          ls -alh flask-app 
-          # Ensure that the flask-app directory was created and populated
-          cd flask-app
+          ls -alh flask-app  # Ensure that the flask-app directory was created and populated
+
   build:
     runs-on: ubuntu-latest
     needs: clone-code
@@ -55,8 +54,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd flask-app
-          la -l
+          cd flask-app  # Ensure we're in the flask-app directory
+          ls -alh  # List contents to confirm docker-compose.yml exists
           docker-compose build
 
   run:
@@ -89,8 +88,8 @@ jobs:
           cd flask-app  # Ensure we are in the correct directory
           
           # Check if docker-compose.yaml exists
-          if [ ! -f docker-compose.yaml ]; then
-            echo "docker-compose.yaml not found in flask-app directory."
+          if [ ! -f docker-compose.yml ]; then
+            echo "docker-compose.yml not found in flask-app directory."
             exit 1
           fi
           
@@ -152,5 +151,6 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
 
 
