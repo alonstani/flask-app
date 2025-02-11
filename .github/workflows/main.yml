@@ -54,7 +54,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd flask-app  # Ensure we're in the flask-app directory
+          cd /flask-app  # Ensure we're in the flask-app directory
           ls -alh  # List contents to confirm docker-compose.yml exists
           docker-compose build
 
