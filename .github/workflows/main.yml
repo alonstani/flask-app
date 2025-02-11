@@ -39,12 +39,8 @@ jobs:
       - name: List contents of flask-app directory (if exists)
         run: |
           echo "Listing contents of flask-app directory if it exists"
-          if [ -d "flask-app" ]; then
-            ls -alh flask-app
-          else
-            echo "flask-app directory not found."
-            exit 1
-          fi
+          cd flask-app  # This changes directory to the flask-app subdirectory
+          ls -alh
 
   build:
     runs-on: ubuntu-latest
@@ -58,14 +54,15 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
 
-      - name: Check contents of the current directory
+      - name: Check contents of the flask-app directory
         run: |
-          echo "Listing contents of the current directory (where docker-compose.yaml is located)"
-          ls -alh /home/runner/work/flask-app/flask-app
+          echo "Listing contents of flask-app directory (where docker-compose.yaml is located)"
+          cd flask-app  # Ensure we are in the flask-app directory
+          ls -alh
 
       - name: Build Docker image
         run: |
-          cd /home/runner/work/flask-app/flask-app
+          cd flask-app  # Navigate into flask-app directory
           ls -l
           docker-compose build
 
@@ -75,7 +72,7 @@ jobs:
     steps:
       - name: Start containers with docker-compose
         run: |
-          cd /home/runner/work/flask-app/flask-app
+          cd flask-app  # Ensure we are in the flask-app directory
           ls -l  # Confirm that docker-compose.yaml is present
           docker-compose up -d
           sleep 10 
@@ -96,7 +93,7 @@ jobs:
           sleep 5  # Allow the container some time to initialize
           echo "Listing all running containers:"
           docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
-          cd /home/runner/work/flask-app/flask-app  # Ensure we are in the correct directory
+          cd flask-app  # Ensure we are in the flask-app directory
           
           # Check if docker-compose.yaml exists
           if [ ! -f docker-compose.yaml ]; then
@@ -137,7 +134,7 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: |
-          cd /home/runner/work/flask-app/flask-app
+          cd flask-app  # Navigate to flask-app directory
           IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
           docker tag flask-app ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
           docker push ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
@@ -154,7 +151,7 @@ jobs:
 
       - name: Commit and push changes to Git
         run: |
-          cd /home/runner/work/flask-app/flask-app
+          cd flask-app  # Ensure we are in the flask-app directory
           if [ -n "$(git status --porcelain)" ]; then
             git add .
             git commit -m "Automated commit from GitHub Actions"
