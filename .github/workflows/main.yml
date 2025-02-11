@@ -36,12 +36,15 @@ jobs:
           pwd
           ls -alh
 
-      - name: Clone the flask-app repository into the flask-app directory
+      - name: List contents of the flask-app directory (if exists)
         run: |
-          rm -rf flask-app  # Clean up any old directory
-          git clone ${GIT_REPO_URL} flask-app
-          echo "Listing contents of the flask-app directory"
-          ls -alh flask-app  # Ensure the flask-app directory was created and populated
+          echo "Listing contents of flask-app directory if it exists"
+          if [ -d "flask-app" ]; then
+            ls -alh flask-app
+          else
+            echo "flask-app directory not found."
+            exit 1
+          fi
 
   build:
     runs-on: ubuntu-latest
@@ -58,12 +61,17 @@ jobs:
       - name: Go into flask-app directory and check contents
         run: |
           echo "Navigating to flask-app directory"
-          cd flask-app
-          echo "Listing contents of flask-app directory"
-          ls -alh
-          # Ensure docker-compose.yaml is present
-          if [ ! -f docker-compose.yaml ]; then
-            echo "docker-compose.yaml not found in flask-app directory!"
+          if [ -d "flask-app" ]; then
+            cd flask-app
+            echo "Listing contents of flask-app directory"
+            ls -alh
+            # Ensure docker-compose.yaml is present
+            if [ ! -f docker-compose.yaml ]; then
+              echo "docker-compose.yaml not found in flask-app directory!"
+              exit 1
+            fi
+          else
+            echo "flask-app directory does not exist!"
             exit 1
           fi
 
@@ -166,7 +174,3 @@ jobs:
           else
             echo "No changes to commit."
           fi
-
-
-
-
