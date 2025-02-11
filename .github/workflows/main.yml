@@ -45,8 +45,8 @@ jobs:
 
       - name: Check if docker-compose.yaml exists
         run: |
-          echo "Checking if docker-compose.yaml exists in flask-app/flask-app directory"
-          if [ ! -f /home/runner/work/flask-app/flask-app/flask-app/docker-compose.yml ]; then
+          echo "Checking if docker-compose.yaml exists in flask-app directory"
+          if [ ! -f /home/runner/work/flask-app/flask-app/docker-compose.yml ]; then
             echo "docker-compose.yaml not found!"
             exit 1
           else
