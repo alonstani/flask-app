@@ -1,0 +1,153 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  GIT_REPO_URL: 'https://github.com/alonstani/flask-app.git'
+  BRANCH_NAME: 'master'
+  GIT_CREDENTIALS_ID: 'git-credential-id'
+  DOCKERHUB_REPO: 'inyouk/flask-app'
+  DOCKERHUB_CREDENTIALS_ID: 'docker-credential-id'
+
+jobs:
+  clean-up:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up Docker containers
+        run: |
+          docker ps -q | xargs -r docker stop
+          docker ps -a -q | xargs -r docker rm
+
+  clone-code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: List directory contents
+        run: |
+          ls -alh
+
+      - name: Create flask-app directory and clone repo into it
+        run: |
+          rm -rf flask-app  # Clean up any old directory
+          git clone ${GIT_REPO_URL} flask-app
+          ls -alh flask-app  # Ensure that the flask-app directory was created and populated
+
+  build:
+    runs-on: ubuntu-latest
+    needs: clone-code
+    steps:
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: Build Docker image
+        run: |
+          docker-compose build
+
+  run:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Start containers with docker-compose
+        run: |
+          cd flask-app
+          ls -l  # Confirm that docker-compose.yml is present
+          docker-compose up -d
+          sleep 10 
+          echo "Listing all containers after docker-compose up:"
+          docker ps  # List all running containers after starting the services
+          if ! docker ps -q --filter "name=flask-app"; then
+            echo "flask-app container did not start." 
+            docker ps -a  # List all containers, including stopped ones
+            exit 1
+          fi
+
+  test:
+    runs-on: ubuntu-latest
+    needs: run
+    steps:
+      - name: Test Flask app
+        run: |
+          sleep 5  # Allow the container some time to initialize
+          echo "Listing all running containers:"
+          docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
+          cd flask-app  # Ensure we are in the correct directory
+          
+          # Check if docker-compose.yaml exists
+          if [ ! -f docker-compose.yaml ]; then
+            echo "docker-compose.yaml not found in flask-app directory."
+            exit 1
+          fi
+          
+          # Check if the flask-app container is running (by name)
+          if ! docker ps -q --filter "name=flask-app_flask-app_1"; then
+            echo "flask-app container is not running."
+            exit 1
+          fi
+
+      - name: Check container logs
+        run: |
+          if ! docker logs flask-app_flask-app_1; then
+            echo "Container logs check failed"
+            exit 1
+          fi    
+
+      - name: Test app with curl
+        run: |
+          if ! curl -f http://localhost:5000; then 
+            echo "App is not reachable."
+            docker logs flask-app_flask-app_1  # Show the logs for the flask-app container
+            exit 1
+          fi
+
+  push-docker-image:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          cd flask-app
+          IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
+          docker tag flask-app ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
+          docker push ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
+
+  push-code:
+    runs-on: ubuntu-latest
+    needs: push-docker-image
+    steps:
+      - name: Push code to GitHub
+        uses: actions/setup-git@v2
+        with:
+          user-name: 'inyouk'
+          user-email: 'alonstani95@gmail.com'
+
+      - name: Commit and push changes to Git
+        run: |
+          cd flask-app
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Automated commit from GitHub Actions"
+            git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL.replace('https://', '')} ${BRANCH_NAME}
+          else
+            echo "No changes to commit."
+          fi
+
+
