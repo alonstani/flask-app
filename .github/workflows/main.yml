@@ -38,8 +38,9 @@ jobs:
         run: |
           rm -rf flask-app  # Clean up any old directory
           git clone ${GIT_REPO_URL} flask-app
-          ls -alh flask-app  # Ensure that the flask-app directory was created and populated
-
+          ls -alh flask-app 
+          # Ensure that the flask-app directory was created and populated
+          cd flask-app
   build:
     runs-on: ubuntu-latest
     needs: clone-code
