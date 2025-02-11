@@ -41,8 +41,7 @@ jobs:
           rm -rf flask-app  # Clean up any old directory
           git clone ${GIT_REPO_URL} flask-app
           echo "Listing contents of flask-app directory"
-          cd flask-app
-          ls -alh  # Ensure that the flask-app directory was created and populated
+          ls -alh flask-app  # Ensure that the flask-app directory was created and populated
 
   build:
     runs-on: ubuntu-latest
@@ -56,11 +55,17 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
 
+      - name: Go up one level and check contents
+        run: |
+          echo "Going up one level to /home/runner/work/flask-app"
+          cd ..
+          echo "Listing contents of /home/runner/work/flask-app"
+          ls -alh
+
       - name: Build Docker image
         run: |
-          # Go into the flask-app directory where docker-compose.yaml is located
-          echo "Current directory: $(pwd)"
-          ls -alh  # List files to confirm the docker-compose.yaml exists
+          cd flask-app
+          ls -l
           docker-compose build
 
   run:
@@ -70,7 +75,7 @@ jobs:
       - name: Start containers with docker-compose
         run: |
           cd flask-app
-          ls -l  # Confirm that docker-compose.yaml is present
+          ls -l  # Confirm that docker-compose.yml is present
           docker-compose up -d
           sleep 10 
           echo "Listing all containers after docker-compose up:"
@@ -150,11 +155,12 @@ jobs:
         run: |
           cd flask-app
           if [ -n "$(git status --porcelain)" ]; then
-            git add .
+            git add . 
             git commit -m "Automated commit from GitHub Actions"
             git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL.replace('https://', '')} ${BRANCH_NAME}
           else
             echo "No changes to commit."
           fi
+
 
 
