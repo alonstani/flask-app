@@ -58,10 +58,18 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
 
-      - name: Check contents of the flask-app directory
+      - name: Recheck contents after Docker installation
         run: |
-          echo "Listing contents of flask-app directory (where docker-compose.yaml is located)"
+          echo "Listing contents of the flask-app directory (after Docker Compose installation)"
           ls -alh /home/runner/work/flask-app/flask-app
+
+      - name: Check for docker-compose.yaml before build
+        run: |
+          echo "Checking for docker-compose.yaml in flask-app directory"
+          if [ ! -f "/home/runner/work/flask-app/flask-app/docker-compose.yaml" ]; then
+            echo "docker-compose.yaml not found. Exiting."
+            exit 1
+          fi
 
       - name: Build Docker image
         run: |
@@ -162,4 +170,5 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
 
