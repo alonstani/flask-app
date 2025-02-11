@@ -54,6 +54,8 @@ jobs:
 
       - name: Build Docker image
         run: |
+          cd flask-app
+          la -l
           docker-compose build
 
   run:
