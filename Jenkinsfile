@@ -121,26 +121,32 @@ pipeline {
         }
 
         // New stage to push changes to Git (optional, if you want to commit and push code to GitHub)
-        stage('Push Code to Git') {
-            steps {
-                script {
-                    // Configuring Git credentials
-                    withCredentials([usernamePassword(credentialsId: "${git_credentials_id}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                        sh '''
-                            # Configure git with credentials
-                            git config --global user.email "alonstani95@gmail.com"
-                            git config --global user.name "inyouk"
-                            
-                            cd flask-app
-                            git add .  # Stage changes
-                            git commit -m "Automated commit from Jenkins"
-                            git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${git_repo_url.replace('https://', '')} ${branch_name}
-                        '''
-                    }
-                }
+     stage('Push Code to Git') {
+    steps {
+        script {
+            // Configuring Git credentials
+            withCredentials([usernamePassword(credentialsId: "${git_credentials_id}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                sh '''
+                    # Configure git with credentials
+                    git config --global user.email "alonstani95@gmail.com"
+                    git config --global user.name "inyouk"
+                    
+                    cd flask-app
+                    
+                    # Check if there are any changes to commit
+                    if [ -n "$(git status --porcelain)" ]; then
+                        # Stage changes, commit, and push if changes exist
+                        git add .
+                        git commit -m "Automated commit from Jenkins"
+                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${git_repo_url.replace('https://', '')} ${branch_name}
+                    else
+                        echo "No changes to commit."
+                    fi
+                '''
             }
         }
     }
 }
+
 
 
