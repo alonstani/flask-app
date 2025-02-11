@@ -57,8 +57,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd flask-app  # Make sure we are in the correct directory
-          ls -alh  # Check contents of flask-app
+          cd /home/runner/work/flask-app/flask-app  # Full path to flask-app directory
+          ls -alh  # Check contents of flask-app directory
           docker-compose build
 
   run:
@@ -67,7 +67,7 @@ jobs:
     steps:
       - name: Start containers with docker-compose
         run: |
-          cd flask-app  # Change to the correct directory
+          cd /home/runner/work/flask-app/flask-app  # Full path to flask-app directory
           ls -l  # Confirm that docker-compose.yml is present
           docker-compose up -d
           sleep 10 
@@ -88,7 +88,7 @@ jobs:
           sleep 5  # Allow the container some time to initialize
           echo "Listing all running containers:"
           docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
-          cd flask-app  # Ensure we are in the correct directory
+          cd /home/runner/work/flask-app/flask-app  # Full path to flask-app directory
           
           # Check if docker-compose.yaml exists
           if [ ! -f docker-compose.yaml ]; then
@@ -129,7 +129,7 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: |
-          cd flask-app  # Ensure we are in the correct directory
+          cd /home/runner/work/flask-app/flask-app  # Full path to flask-app directory
           IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
           docker tag flask-app ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
           docker push ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
@@ -146,7 +146,7 @@ jobs:
 
       - name: Commit and push changes to Git
         run: |
-          cd flask-app
+          cd /home/runner/work/flask-app/flask-app  # Full path to flask-app directory
           if [ -n "$(git status --porcelain)" ]; then
             git add .
             git commit -m "Automated commit from GitHub Actions"
@@ -154,4 +154,5 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
 
