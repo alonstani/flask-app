@@ -64,6 +64,7 @@ jobs:
     steps:
       - name: Recheck contents after Docker installation
         run: |
+          cd /home/runner/work/flask-app/flask-app
           echo "Listing contents of the flask-app directory (after Docker Compose installation)"
           ls -alh /home/runner/work/flask-app/flask-app
 
