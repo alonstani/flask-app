@@ -120,7 +120,7 @@ pipeline {
             }
         }
 
-        // New stage to push changes to Git (optional, if you want to commit and push code to GitHub)
+        // New 'Push Code to Git' stage with your logic
         stage('Push Code to Git') {
             steps {
                 script {
@@ -132,9 +132,16 @@ pipeline {
                             git config --global user.name "inyouk"
                             
                             cd flask-app
-                            git add .  # Stage changes
-                            git commit -m "Automated commit from Jenkins"
-                            git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${git_repo_url.replace('https://', '')} ${branch_name}
+                            
+                            # Check if there are any changes to commit
+                            if [ -n "$(git status --porcelain)" ]; then
+                                # Stage changes, commit, and push if changes exist
+                                git add .
+                                git commit -m "Automated commit from Jenkins"
+                                git push https://${GIT_USERNAME}:${GIT_PASSWORD}@${git_repo_url.replace('https://', '')} ${branch_name}
+                            else
+                                echo "No changes to commit."
+                            fi
                         '''
                     }
                 }
@@ -142,6 +149,7 @@ pipeline {
         }
     }
 }
+
 
 
 
