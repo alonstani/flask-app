@@ -58,7 +58,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd flask-app  # Go into the flask-app directory where docker-compose.yaml is located
+          # Go into the flask-app directory where docker-compose.yaml is located
           echo "Current directory: $(pwd)"
           ls -alh  # List files to confirm the docker-compose.yaml exists
           docker-compose build
