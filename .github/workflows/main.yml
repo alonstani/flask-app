@@ -74,6 +74,7 @@ jobs:
       - name: List contents of the current directory
         run: |
           echo "Listing contents of the current directory after checkout"
+          pwd
           ls -alh
 
 
