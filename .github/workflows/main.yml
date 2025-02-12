@@ -50,26 +50,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          persist-credentials: false  # Prevents automatic deletion of the repository's contents
+          persist-credentials: false
 
       - name: List contents of the root directory after checkout
         run: |
           echo "Listing contents of the current directory after checkout"
           pwd
           ls -alh
-          docker-compose build
 
   build:
     runs-on: ubuntu-latest
     needs: clone-code
     steps:
-      - name: Build Docker image
+      - name: Ensure docker-compose is available
         run: |
           echo "Ensuring docker-compose is available"
           sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
 
+      - name: Build Docker image
+        run: |
+          echo "Building the Docker image"
           pwd
           cd /home/runner/work/flask-app/flask-app
           echo "Listing files in the flask-app directory"
@@ -136,6 +138,7 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
 
 
 
