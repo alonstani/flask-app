@@ -138,6 +138,7 @@ jobs:
       - name: Start containers with docker-compose
         run: |
           cd /home/runner/work/flask-app
+          ls -l
           echo "Current directory:"
           pwd
           echo "Listing files in the flask-app directory:"
