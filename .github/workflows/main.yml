@@ -100,7 +100,7 @@ jobs:
           ls -l docker-compose.yaml
           
           # Build the docker image
-          docker-compose build
+          sudo docker-compose build
 
   run:
     runs-on: ubuntu-latest
@@ -115,7 +115,7 @@ jobs:
       - name: Start containers with docker-compose
         run: |
           cd /home/runner/work/flask-app/flask-app
-          docker-compose up -d
+          sudo docker-compose up -d
           sleep 10
           docker ps
 
