@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Build and Deploy Flask App
 
 on:
   push:
@@ -8,134 +8,106 @@ on:
     branches:
       - master
 
-env:
-  GIT_REPO_URL: 'https://github.com/alonstani/flask-app.git'
-  BRANCH_NAME: 'master'
-  GIT_CREDENTIALS_ID: 'git-credential-id'
-  DOCKERHUB_REPO: 'inyouk/flask-app'
-  DOCKERHUB_CREDENTIALS_ID: 'docker-credential-id'
-
 jobs:
-  setup-docker:
+  # Stage 1: Cleanup Stage (only clears workspace if needed)
+  cleanup:
     runs-on: ubuntu-latest
     steps:
+      - name: Clean up workspace (Optional)
+        run: |
+          echo "Cleaning workspace before starting the build..."
+          rm -rf /home/runner/work/flask-app/flask-app
+
+  # Stage 2: Set up Docker, clone repo, and install dependencies
+  setup-docker:
+    runs-on: ubuntu-latest
+    needs: cleanup
+    steps:
+      # Step 1: Checkout repository with no clean up
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false  # Ensures repository is not cleared after checkout
+
+      # Step 2: Install Docker and Docker Compose
       - name: Install Docker
         run: |
           sudo apt-get update
-          sudo apt-get install \
+          sudo apt-get install -y \
             apt-transport-https \
             ca-certificates \
             curl \
             gnupg \
-            lsb-release \
-            -y
-          
-          # Add Docker GPG key
+            lsb-release
+
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
           sudo apt-get update
-          sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
       - name: Install Docker Compose
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
-          # Check if Docker Compose is installed correctly
           docker-compose --version
 
-  clone-code:
+  # Stage 3: Build Docker image
+  build-image:
     runs-on: ubuntu-latest
     needs: setup-docker
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: List contents of the root directory after checkout
+      # Step 1: Ensure repository is still intact after previous steps
+      - name: Listing files in the flask-app directory before building
         run: |
-          echo "Listing contents of the current directory after checkout"
-          pwd
-          ls -alh
-          docker-compose build
+          echo "Listing contents of flask-app directory before build"
+          ls -alh /home/runner/work/flask-app/flask-app
 
-      
-
-  build:
-    runs-on: ubuntu-latest
-    needs: clone-code
-    steps:
+      # Step 2: Build Docker Compose
       - name: Build Docker image
         run: |
-          echo "Ensuring docker-compose is available"
-          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
-
-          pwd
           cd /home/runner/work/flask-app/flask-app
-          echo "Listing files in the flask-app directory"
-          ls -l
-          
-          # Build the docker image
           docker-compose build
 
-  run:
+  # Stage 4: Push Docker image to Docker Hub
+  push-image:
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-image
     steps:
-      - name: Start containers with docker-compose
+      # Step 1: Ensure repository is still intact
+      - name: Listing files in the flask-app directory before pushing
         run: |
-          cd /home/runner/work/flask-app/flask-app
-          docker-compose up -d
-          sleep 10
-          docker ps
+          echo "Listing contents of flask-app directory before push"
+          ls -alh /home/runner/work/flask-app/flask-app
 
-  test:
-    runs-on: ubuntu-latest
-    needs: run
-    steps:
-      - name: Test Flask app
-        run: |
-          sleep 5
-          docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
-          curl -f http://localhost:5000 || echo "Flask app is not running as expected"
-
-  push-docker-image:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
+      # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Step 3: Push image to Docker Hub
       - name: Push Docker image to Docker Hub
         run: |
-          cd /home/runner/work/flask-app/flask-app
-          IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
-          docker tag flask-app ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
-          docker push ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
+          docker-compose push
 
-  push-code:
+  # Stage 5: Deploy to AWS (or another service)
+  deploy:
     runs-on: ubuntu-latest
-    needs: push-docker-image
+    needs: push-image
     steps:
-      - name: Push code to GitHub
-        uses: actions/setup-git@v2
-        with:
-          user-name: 'inyouk'
-          user-email: 'alonstani95@gmail.com'
-
-      - name: Commit and push changes to Git
+      # Step 1: Ensure repository is still intact
+      - name: Listing files in the flask-app directory before deploy
         run: |
-          cd /home/runner/work/flask-app/flask-app
-          if [ -n "$(git status --porcelain)" ]; then
-            git add .
-            git commit -m "Automated commit from GitHub Actions"
-            git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL.replace('https://', '')} ${BRANCH_NAME}
-          else
-            echo "No changes to commit."
-          fi
+          echo "Listing contents of flask-app directory before deploy"
+          ls -alh /home/runner/work/flask-app/flask-app
+
+      # Step 2: Deploy to AWS using Dockerrun.aws.json (or other deployment method)
+      - name: Deploy to AWS
+        run: |
+          aws ecs update-service --cluster my-cluster --service my-service --force-new-deployment
+
+
 
 
 
