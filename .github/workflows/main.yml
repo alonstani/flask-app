@@ -53,11 +53,12 @@ jobs:
       - name: List contents of the root directory after checkout
         run: |
           echo "Listing contents of the current directory after checkout"
+          pwd
           ls -alh
 
       - name: List contents of flask-app directory (if exists)
         run: |
-          echo "Listing contents of flask-app directory"
+          echo "Listing contents of flask-app/flask-app directory"
           if [ -d "flask-app" ]; then
             ls -alh flask-app
           else
