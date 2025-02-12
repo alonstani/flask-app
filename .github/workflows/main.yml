@@ -170,41 +170,35 @@ jobs:
 
   push-docker-image:
     runs-on: ubuntu-latest
-    needs: test
+    needs: test  # Make sure it runs after the test stage
     steps:
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push Docker image to Docker Hub
-        run: |
-          cd /home/runner/work/flask-app/flask-app
-          IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
-          docker tag flask-app ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
-          docker push ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
+    - name: Navigate to Flask app directory
+      run: |
+        cd /home/runner/work/flask-app/flask-app  # Ensure you're in the correct directory
+        
+    - name: Build Docker image
+      run: |
+        # Build the Docker image using docker-compose
+        docker-compose build  # Alternatively, use `docker build` if you're not using compose
+        docker images  # Check if the image is built successfully
 
-  push-code:
-    runs-on: ubuntu-latest
-    needs: push-docker-image
-    steps:
-      - name: Push code to GitHub
-        uses: actions/setup-git@v2
-        with:
-          user-name: 'inyouk'
-          user-email: 'alonstani95@gmail.com'
+    - name: Tag Docker image
+      run: |
+        IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
+        docker tag flask-app ${IMAGE_TAG}  # Tag the built image
 
-      - name: Commit and push changes to Git
-        run: |
-          cd /home/runner/work/flask-app/flask-app
-          if [ -n "$(git status --porcelain)" ]; then
-            git add . 
-            git commit -m "Automated commit from GitHub Actions"
-            git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL.replace('https://', '')} ${BRANCH_NAME}
-          else
-            echo "No changes to commit."
-          fi
+    - name: Push Docker image to Docker Hub
+      run: |
+        IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
+        docker push ${IMAGE_TAG}  # Push the tagged image to Docker Hub
+
+
 
 
 
