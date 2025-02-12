@@ -120,31 +120,38 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      # Step 1: Download Docker Compose artifact
-      - name: Download Docker Compose
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-compose
-          path: /usr/local/bin
+    # Step 1: Download the flask-app-files artifact (this restores the code and any necessary files)
+    - name: Download flask-app-files artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: flask-app-files
+        path: /home/runner/work/flask-app/flask-app  # Ensure it is downloaded to the correct directory
 
-      # Step 2: Ensure Docker Compose is available (this step is optional, as we are downloading it)
-      - name: Ensure Docker Compose is available
-        run: |
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
+    # Step 2: Download Docker Compose artifact (this step can remain as it is)
+    - name: Download Docker Compose
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-compose
+        path: /usr/local/bin
 
-      # Step 3: Start containers with docker-compose
-      - name: Start containers with docker-compose
-        run: |
-          cd flask-app/flask-app
-          ls -l
-          echo "Current directory:"
-          pwd
-          echo "Listing files in the flask-app directory:"
-          ls -l
-          sudo docker-compose up -d
-          sleep 10
-          docker ps
+    # Step 3: Ensure Docker Compose is available
+    - name: Ensure Docker Compose is available
+      run: |
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version
+
+    # Step 4: Start containers with docker-compose
+    - name: Start containers with docker-compose
+      run: |
+        cd /home/runner/work/flask-app/flask-app  # Navigate to the folder where files were restored
+        ls -l  # List files for debugging
+        echo "Current directory:"
+        pwd
+        echo "Listing files in the flask-app directory:"
+        ls -l  # Ensure files were restored properly
+        sudo docker-compose up -d  # Start containers
+        sleep 10
+        docker ps  # Check if containers are up
 
 
 
