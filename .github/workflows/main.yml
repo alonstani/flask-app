@@ -58,13 +58,9 @@ jobs:
 
       - name: List contents of flask-app directory (if exists)
         run: |
-          echo "Listing contents of flask-app/flask-app directory"
-          if [ -d "flask-app" ]; then
-            ls -alh flask-app
-          else
-            echo "flask-app directory not found."
-            exit 1
-          fi
+          echo "Listing contents of /home/runner/work/flask-app/flask-app directory"
+          
+          ls -alh 
 
   build:
     runs-on: ubuntu-latest
