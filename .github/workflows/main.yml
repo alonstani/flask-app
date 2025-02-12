@@ -53,17 +53,10 @@ jobs:
       - name: List contents of the root directory after checkout
         run: |
           echo "Listing contents of the current directory after checkout"
+          pwd
           ls -alh
 
-      - name: List contents of flask-app directory (if exists)
-        run: |
-          echo "Listing contents of flask-app directory"
-          if [ -d "flask-app" ]; then
-            ls -alh flask-app
-          else
-            echo "flask-app directory not found."
-            exit 1
-          fi
+      
 
   build:
     runs-on: ubuntu-latest
@@ -75,7 +68,8 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
-          
+
+          pwd
           cd /home/runner/work/flask-app/flask-app
           echo "Listing files in the flask-app directory"
           ls -l
