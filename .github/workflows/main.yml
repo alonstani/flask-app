@@ -43,6 +43,12 @@ jobs:
           # Check if Docker Compose is installed correctly
           docker-compose --version
 
+      - name: Upload Docker Compose as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-compose
+          path: /usr/local/bin/docker-compose
+
   clone-code:
     runs-on: ubuntu-latest
     needs: setup-docker
@@ -77,12 +83,11 @@ jobs:
         with:
           name: flask-app-files
 
-      - name: Ensure docker-compose is available
-        run: |
-          echo "Ensuring docker-compose is available"
-          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
+      - name: Download Docker Compose
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-compose
+          path: /usr/local/bin
 
       - name: Build Docker image
         run: |
@@ -101,6 +106,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Download Docker Compose
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-compose
+          path: /usr/local/bin
+
       - name: Start containers with docker-compose
         run: |
           cd /home/runner/work/flask-app/flask-app
@@ -155,6 +166,7 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
 
 
 
