@@ -107,7 +107,7 @@ jobs:
       - name: Build Docker image
         run: |
           echo "Building the Docker image"
-          cd flask-app/flask-app
+          cd flask-app
           ls -l
           
           # Ensure docker-compose.yml is in the correct location
