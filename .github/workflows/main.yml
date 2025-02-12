@@ -107,7 +107,7 @@ jobs:
       - name: Build Docker image
         run: |
           echo "Building the Docker image"
-          cd flask-app
+          cd /home/runner/work/flask-app/flask-app
           echo "Listing files in the flask-app directory"
           ls -l
           
