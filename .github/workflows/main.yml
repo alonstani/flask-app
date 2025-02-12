@@ -16,6 +16,46 @@ env:
   DOCKERHUB_CREDENTIALS_ID: 'docker-credential-id'
 
 jobs:
+  setup-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Docker
+        run: |
+          # Update the apt package list
+          sudo apt-get update
+
+          # Install required dependencies
+          sudo apt-get install \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            gnupg \
+            lsb-release \
+            -y
+
+          # Add Docker's official GPG key
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+          # Set up the stable Docker repository
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+          # Update apt package list again after adding Docker's repo
+          sudo apt-get update
+
+          # Install Docker CE (Community Edition)
+          sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+
+      - name: Install Docker Compose
+        run: |
+          # Download Docker Compose
+          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          
+          # Make the docker-compose binary executable
+          sudo chmod +x /usr/local/bin/docker-compose
+          
+          # Verify installation
+          docker-compose --version
+
   clean-up:
     runs-on: ubuntu-latest
     steps:
@@ -24,17 +64,6 @@ jobs:
           docker ps -q | xargs -r docker stop
           docker ps -a -q | xargs -r docker rm
 
-  setup-docker:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Docker
-        uses: docker/setup-buildx-action@v2
-
-      - name: Install Docker Compose
-        run: |
-          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-
   clone-code:
     runs-on: ubuntu-latest
     needs: setup-docker
@@ -42,27 +71,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: List root directory contents
+      - name: List contents of the current directory
         run: |
-          echo "Listing contents of the current directory"
-          pwd
+          echo "Listing contents of the current directory after checkout"
           ls -alh
 
-     
+      - name: List contents of flask-app directory (if exists)
+        run: |
+          echo "Listing contents of flask-app directory if it exists"
+          if [ -d "flask-app" ]; then
+            ls -alh flask-app
+          else
+            echo "flask-app directory not found."
+            exit 1
+          fi
 
   build:
     runs-on: ubuntu-latest
     needs: clone-code
     steps:
-      - name: Check contents of the flask-app directory (after clone)
-        run: |
-          echo "Listing contents of the flask-app directory after cloning"
-          ls -alh /home/runner/work/flask-app/flask-app
-
       - name: Build Docker image
         run: |
-          cd /home/runner/work/flask-app/flask-app  # Ensure we are in the correct directory
-          ls -l  # Debugging step: Check files in the directory
+          cd /home/runner/work/flask-app/flask-app
+          ls -l
           docker-compose build
 
   run:
@@ -71,21 +102,10 @@ jobs:
     steps:
       - name: Start containers with docker-compose
         run: |
-          cd /home/runner/work/flask-app/flask-app  # Use the full path to avoid errors
-          ls -l  # Confirm that docker-compose.yaml is present
-          if [ ! -f docker-compose.yaml ]; then
-            echo "docker-compose.yaml not found in flask-app directory!"
-            exit 1
-          fi
+          cd /home/runner/work/flask-app/flask-app
           docker-compose up -d
           sleep 10
-          echo "Listing all containers after docker-compose up:"
-          docker ps  # List all running containers after starting the services
-          if ! docker ps -q --filter "name=flask-app"; then
-            echo "flask-app container did not start." 
-            docker ps -a  # List all containers, including stopped ones
-            exit 1
-          fi
+          docker ps
 
   test:
     runs-on: ubuntu-latest
@@ -96,7 +116,7 @@ jobs:
           sleep 5  # Allow the container some time to initialize
           echo "Listing all running containers:"
           docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
-          cd /home/runner/work/flask-app/flask-app  # Ensure we are in the flask-app directory
+          cd /home/runner/work/flask-app/flask-app  # Ensure we are in the correct directory
           
           # Check if docker-compose.yaml exists
           if [ ! -f docker-compose.yaml ]; then
@@ -137,7 +157,7 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: |
-          cd /home/runner/work/flask-app/flask-app  # Navigate to flask-app directory
+          cd /home/runner/work/flask-app/flask-app
           IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
           docker tag flask-app ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
           docker push ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
@@ -154,9 +174,9 @@ jobs:
 
       - name: Commit and push changes to Git
         run: |
-          cd /home/runner/work/flask-app/flask-app  # Ensure we are in the flask-app directory
+          cd /home/runner/work/flask-app/flask-app
           if [ -n "$(git status --porcelain)" ]; then
-            git add .
+            git add . 
             git commit -m "Automated commit from GitHub Actions"
             git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL.replace('https://', '')} ${BRANCH_NAME}
           else
