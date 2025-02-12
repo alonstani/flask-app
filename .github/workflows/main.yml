@@ -203,7 +203,7 @@ jobs:
     - name: Tag Docker image
       run: |
         IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
-        docker tag flask-app ${IMAGE_TAG}  # Tag the built image
+        docker tag flask-app_flask-app ${IMAGE_TAG}  # Tag the built image
 
     # Step 6: Push Docker image to Docker Hub
     - name: Push Docker image to Docker Hub
