@@ -40,7 +40,7 @@ jobs:
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
-          # Check if Docker Compose is installed correctly
+          # Ensure Docker Compose is available
           docker-compose --version
 
       - name: Upload Docker Compose as artifact
@@ -89,6 +89,11 @@ jobs:
           name: docker-compose
           path: /usr/local/bin
 
+      - name: Ensure Docker Compose is available
+        run: |
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
       - name: Build Docker image
         run: |
           echo "Building the Docker image"
@@ -111,6 +116,11 @@ jobs:
         with:
           name: docker-compose
           path: /usr/local/bin
+
+      - name: Ensure Docker Compose is available
+        run: |
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
 
       - name: Start containers with docker-compose
         run: |
@@ -166,6 +176,7 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
 
 
 
