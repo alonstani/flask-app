@@ -55,6 +55,7 @@ jobs:
           echo "Listing contents of the current directory after checkout"
           pwd
           ls -alh
+          docker-compose build
 
       
 
