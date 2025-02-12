@@ -107,8 +107,7 @@ jobs:
       - name: Build Docker image
         run: |
           echo "Building the Docker image"
-          cd /home/runner/work/flask-app/flask-app
-          echo "Listing files in the flask-app directory"
+          cd flask-app/flask-app
           ls -l
           
           # Ensure docker-compose.yml is in the correct location
@@ -137,7 +136,7 @@ jobs:
       # Step 3: Start containers with docker-compose
       - name: Start containers with docker-compose
         run: |
-          cd /home/runner/work/flask-app
+          cd flask-app/flask-app
           ls -l
           echo "Current directory:"
           pwd
