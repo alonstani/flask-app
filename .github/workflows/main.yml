@@ -139,6 +139,7 @@ jobs:
         run: |
           cd /home/runner/work/flask-app/flask-app
           pwd
+          ls -l
           sudo docker-compose up -d
           sleep 10
           docker ps
