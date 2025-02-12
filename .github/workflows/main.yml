@@ -89,7 +89,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: flask-app-files
-
+          path : ./flask-app
       # Step 2: Download Docker Compose artifact
       - name: Download Docker Compose
         uses: actions/download-artifact@v4
@@ -107,7 +107,7 @@ jobs:
       - name: Build Docker image
         run: |
           echo "Building the Docker image"
-          cd flask-app
+          cd ./flask-app
           ls -l
           
           # Ensure docker-compose.yml is in the correct location
