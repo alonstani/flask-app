@@ -59,17 +59,21 @@ jobs:
           ls -alh
 
       - name: Upload code as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v2
         with:
           name: flask-app-files
-          path: ./flask-app
+          path: .  # Upload current directory
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false
 
   build:
     runs-on: ubuntu-latest
     needs: clone-code
     steps:
       - name: Download the repository files
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v2
         with:
           name: flask-app-files
 
@@ -151,6 +155,7 @@ jobs:
           else
             echo "No changes to commit."
           fi
+
 
 
 
