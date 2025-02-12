@@ -92,7 +92,7 @@ jobs:
           ls -l
           
           # Ensure docker-compose.yml is in the right location
-          ls -l docker-compose.yml
+          ls -l docker-compose.yaml
           
           # Build the docker image
           docker-compose build
