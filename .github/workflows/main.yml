@@ -73,7 +73,6 @@ jobs:
         run: |
           echo "Building the Docker image"
           pwd
-          cd /home/runner/work/flask-app/flask-app
           echo "Listing files in the flask-app directory"
           ls -l
           
