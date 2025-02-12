@@ -196,6 +196,7 @@ jobs:
     - name: Navigate to Flask app directory
       run: |
         cd ./flask-app  # Ensure you're in the correct directory
+        docker-compose build
         docker images  # Verify that the image is built successfully
 
     # Step 5: Tag Docker image
