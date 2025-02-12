@@ -94,6 +94,21 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
 
+      - name: Unzip and verify the contents of the downloaded Docker Compose artifact
+        run: |
+          unzip /usr/local/bin/docker-compose.zip -d /usr/local/bin/docker-compose-dir
+          ls /usr/local/bin/docker-compose-dir
+        continue-on-error: false
+
+      - name: Check if docker-compose.yml exists
+        run: |
+          if [ -f "/usr/local/bin/docker-compose-dir/docker-compose.yml" ]; then
+            echo "docker-compose.yml found."
+          else
+            echo "docker-compose.yml not found."
+            exit 1
+          fi
+
       - name: Build Docker image
         run: |
           echo "Building the Docker image"
@@ -122,9 +137,24 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
 
+      - name: Unzip and verify the contents of the downloaded Docker Compose artifact
+        run: |
+          unzip /usr/local/bin/docker-compose.zip -d /usr/local/bin/docker-compose-dir
+          ls /usr/local/bin/docker-compose-dir
+        continue-on-error: false
+
+      - name: Check if docker-compose.yml exists
+        run: |
+          if [ -f "/usr/local/bin/docker-compose-dir/docker-compose.yml" ]; then
+            echo "docker-compose.yml found."
+          else
+            echo "docker-compose.yml not found."
+            exit 1
+          fi
+
       - name: Start containers with docker-compose
         run: |
-          
+          cd /usr/local/bin/docker-compose-dir
           sudo docker-compose up -d
           sleep 10
           docker ps
