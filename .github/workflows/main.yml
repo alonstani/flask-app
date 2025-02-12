@@ -153,6 +153,59 @@ jobs:
         sleep 10
         docker ps  # Check if containers are up
 
+  test:
+    runs-on: ubuntu-latest
+    needs: run
+    steps:
+      - name: Test Flask app
+        run: |
+          # Give the containers a few seconds to initialize
+          sleep 5
+
+          # List running containers to check if the Flask app container is up
+          docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
+          
+          # Test if Flask app is accessible (assumes it's running on port 5000)
+          curl -f http://localhost:5000 || echo "Flask app is not running as expected"
+
+  push-docker-image:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          cd /home/runner/work/flask-app/flask-app
+          IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
+          docker tag flask-app ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
+          docker push ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
+
+  push-code:
+    runs-on: ubuntu-latest
+    needs: push-docker-image
+    steps:
+      - name: Push code to GitHub
+        uses: actions/setup-git@v2
+        with:
+          user-name: 'inyouk'
+          user-email: 'alonstani95@gmail.com'
+
+      - name: Commit and push changes to Git
+        run: |
+          cd /home/runner/work/flask-app/flask-app
+          if [ -n "$(git status --porcelain)" ]; then
+            git add . 
+            git commit -m "Automated commit from GitHub Actions"
+            git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL.replace('https://', '')} ${BRANCH_NAME}
+          else
+            echo "No changes to commit."
+          fi
+
 
 
 
