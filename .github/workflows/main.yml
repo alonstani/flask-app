@@ -224,6 +224,7 @@ jobs:
           git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL#https://} ${BRANCH_NAME}
         else
           echo "No changes to commit."
+        fi 
       env:
         GIT_REPO_URL: https://github.com/your-repo/flask-app.git
         BRANCH_NAME: master
