@@ -212,18 +212,25 @@ jobs:
         docker push ${IMAGE_TAG}  # Push the tagged image to Docker Hub
 
   commit-push-changes:
-    runs-on: ubuntu-latest
-    needs: push-docker-image  # Ensure it runs after the Docker image is pushed
-    steps:
-      - name: Commit and push changes to Git
-        run: |
-          cd /home/runner/work/flask-app/flask-app
-          if [ -n "$(git status --porcelain)" ]; then
-            git add . 
-            git commit -m "Automated commit from GitHub Actions"
-            git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL.replace('https://', '')} ${BRANCH_NAME}
-          else
-            echo "No changes to commit."
+   runs-on: ubuntu-latest
+   needs: push-docker-image  # Ensure it runs after the Docker image is pushed
+   steps:
+    - name: Commit and push changes to Git
+      run: |
+        cd /home/runner/work/flask-app/flask-app
+        if [ -n "$(git status --porcelain)" ]; then
+          git add . 
+          git commit -m "Automated commit from GitHub Actions"
+          git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL#https://} ${BRANCH_NAME}
+        else
+          echo "No changes to commit."
+      env:
+        GIT_REPO_URL: https://github.com/your-repo/flask-app.git
+        BRANCH_NAME: master
+        GIT_CREDENTIALS_ID: git-credential-id
+        DOCKERHUB_REPO: inyouk/flask-app
+        DOCKERHUB_CREDENTIALS_ID: docker-credential-id
+
 
 
 
