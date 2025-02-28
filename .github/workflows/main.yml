@@ -246,7 +246,7 @@ jobs:
           EC2_HOST: 54.221.192.104
       - name: SSH and deploy to EC2 using Docker Compose
         run: |
-          ssh -i ~/.ssh/id_rsa ec2-user@54.221.192.104 << 'EOF'
+         ssh -i /c/users/user/.ssh/id_rsa ubuntu@54.221.192.104 << 'EOF'
             # Update the server
             sudo apt update
             cd /project/flask-app
