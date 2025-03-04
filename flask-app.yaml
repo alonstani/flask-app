@@ -1,9 +1,10 @@
+# flask-app-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flask-app
 spec:
-  replicas: 2
+  replicas: 1  # Number of instances of your app
   selector:
     matchLabels:
       app: flask-app
@@ -14,15 +15,41 @@ spec:
     spec:
       containers:
       - name: flask-app
-        image: inyouk/flask-app
+        image: yourdockerhubusername/flask-app:latest  # Replace with your Docker Hub image if applicable or use local build
         ports:
         - containerPort: 5000
+        env:
+        - name: FLASK_APP
+          value: "app.py"
+        - name: FLASK_ENV
+          value: "development"
+        - name: DB_HOST
+          value: "db-service"  # This matches the name of the MySQL service
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          value: "123456"
+        - name: DB_NAME
+          value: "db"
         resources:
           requests:
-            memory: "64Mi"     # Request 64 MB of memory
-            cpu: "250m"        # Request 0.25 CPU
+            memory: "256Mi"
+            cpu: "250m"
           limits:
-            memory: "128Mi"    # Limit to 128 MB of memory
-            cpu: "500m"        # Limit to 0.5 CPU
- 
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-app-service
+spec:
+  selector:
+    app: flask-app
+  ports:
+    - protocol: TCP
+      port: 80  # External port for the service
+      targetPort: 5000  # Port the app is running on in the container
+  type: LoadBalancer  # If you want to expose the app externally (you can change this to ClusterIP if you only want internal access)
+
 

@@ -1,0 +1,10 @@
+# flask-app-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flask-app-config
+data:
+  DB_HOST: "db-service"
+  DB_USER: "root"
+  DB_PASSWORD: "123456"
+  DB_NAME: "db"
