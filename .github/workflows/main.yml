@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name : CI/CD Pipeline
 
 on:
   push:
@@ -19,6 +19,7 @@ jobs:
   setup-docker:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Install Docker
       - name: Install Docker
         run: |
           sudo apt-get update
@@ -36,58 +37,121 @@ jobs:
           sudo apt-get update
           sudo apt-get install docker-ce docker-ce-cli containerd.io -y
 
+      # Step 2: Install Docker Compose
       - name: Install Docker Compose
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
-          # Check if Docker Compose is installed correctly
+          # Ensure Docker Compose is available
           docker-compose --version
+
+      # Step 3: Upload Docker Compose as an artifact for use in subsequent jobs
+      - name: Upload Docker Compose as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-compose
+          path: /usr/local/bin/docker-compose
 
   clone-code:
     runs-on: ubuntu-latest
     needs: setup-docker
     steps:
+      # Step 1: Checkout code from the repository
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          persist-credentials: false
 
-      - name: List contents of the root directory after checkout
+      # Step 2: List contents after checkout for debugging purposes
+      - name: List contents of the current directory after checkout
         run: |
           echo "Listing contents of the current directory after checkout"
           pwd
           ls -alh
-          docker-compose build
 
-      
+      # Step 3: Upload code as artifact for use in subsequent jobs
+      - name: Upload code as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flask-app-files
+          path: .  # Upload entire repository
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false
 
   build:
     runs-on: ubuntu-latest
     needs: clone-code
     steps:
-      - name: Build Docker image
+      # Step 1: Download the repository files
+      - name: Download the repository files
+        uses: actions/download-artifact@v4
+        with:
+          name: flask-app-files
+          path : ./flask-app
+      # Step 2: Download Docker Compose artifact
+      - name: Download Docker Compose
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-compose
+          path: /usr/local/bin
+
+      # Step 3: Ensure Docker Compose is available (this step is optional, as we are downloading it)
+      - name: Ensure Docker Compose is available
         run: |
-          echo "Ensuring docker-compose is available"
-          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
 
-          pwd
-          cd /home/runner/work/flask-app/flask-app
-          echo "Listing files in the flask-app directory"
+      # Step 4: Build Docker image using docker-compose
+      - name: Build Docker image
+        run: |
+          echo "Building the Docker image"
+          cd ./flask-app
           ls -l
           
-          # Build the docker image
-          docker-compose build
+          # Ensure docker-compose.yml is in the correct location
+          ls -l docker-compose.yaml
+          
+          # Build the Docker image
+          sudo docker-compose build
 
   run:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Start containers with docker-compose
-        run: |
-          cd /home/runner/work/flask-app/flask-app
-          docker-compose up -d
-          sleep 10
-          docker ps
+    # Step 1: Download the flask-app-files artifact (this restores the code and any necessary files)
+    - name: Download flask-app-files artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: flask-app-files
+        path: /home/runner/work/flask-app/flask-app  # Ensure it is downloaded to the correct directory
+
+    # Step 2: Download Docker Compose artifact (this step can remain as it is)
+    - name: Download Docker Compose
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-compose
+        path: /usr/local/bin
+
+    # Step 3: Ensure Docker Compose is available
+    - name: Ensure Docker Compose is available
+      run: |
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version
+
+    # Step 4: Start containers with docker-compose
+    - name: Start containers with docker-compose
+      run: |
+        cd /home/runner/work/flask-app/flask-app  # Navigate to the folder where files were restored
+        ls -l  # List files for debugging
+        echo "Current directory:"
+        pwd
+        echo "Listing files in the flask-app directory:"
+        ls -l  # Ensure files were restored properly
+        sudo docker-compose up -d  # Start containers
+        sleep 10
+        docker ps  # Check if containers are up
 
   test:
     runs-on: ubuntu-latest
@@ -95,47 +159,118 @@ jobs:
     steps:
       - name: Test Flask app
         run: |
+          # Give the containers a few seconds to initialize
           sleep 5
+
+          # List running containers to check if the Flask app container is up
           docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
+          
+          # Test if Flask app is accessible (assumes it's running on port 5000)
           curl -f http://localhost:5000 || echo "Flask app is not running as expected"
 
   push-docker-image:
     runs-on: ubuntu-latest
-    needs: test
+    needs: test  # Make sure it runs after the test stage
     steps:
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+    # Step 1: Log in to Docker Hub
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Download the repository files
+      uses: actions/download-artifact@v4
+      with:
+          name: flask-app-files
+          path : ./flask-app
+    
+    # Step 2: Download Docker Compose (Ensure it is available)
+    - name: Download Docker Compose
+      run: |
+        sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version  # Verify Docker Compose is installed correctly
 
-      - name: Push Docker image to Docker Hub
-        run: |
-          cd /home/runner/work/flask-app/flask-app
-          IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
-          docker tag flask-app ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
-          docker push ${DOCKERHUB_REPO}:${BRANCH_NAME}-latest
+    # Step 3: Navigate to Flask app directory
+    - name: Navigate to Flask app directory
+      run: |
+        cd ./flask-app  # Ensure you're in the correct directory
+        docker-compose build
+        docker images  # Verify that the image is built successfully
 
-  push-code:
+    # Step 5: Tag Docker image
+    - name: Tag Docker image
+      run: |
+        IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
+        docker tag flask-app_flask-app ${IMAGE_TAG}  # Tag the built image
+
+    # Step 6: Push Docker image to Docker Hub
+    - name: Push Docker image to Docker Hub
+      run: |
+        IMAGE_TAG="${DOCKERHUB_REPO}:${BRANCH_NAME}-latest"
+        docker push ${IMAGE_TAG}  # Push the tagged image to Docker Hub
+
+  commit-push-changes:
+   runs-on: ubuntu-latest
+   needs: push-docker-image  # Ensure it runs after the Docker image is pushed
+   steps:
+    - name: Commit and push changes to Git
+      run: |
+        cd /home/runner/work/flask-app/flask-app
+        if [ -n "$(git status --porcelain)" ]; then
+          git add . 
+          git commit -m "Automated commit from GitHub Actions"
+          git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL#https://} ${BRANCH_NAME}
+        else
+          echo "No changes to commit."
+        fi 
+      env:
+        GIT_REPO_URL: https://github.com/your-repo/flask-app.git
+        BRANCH_NAME: master
+        GIT_CREDENTIALS_ID: git-credential-id
+        DOCKERHUB_REPO: inyouk/flask-app
+        DOCKERHUB_CREDENTIALS_ID: docker-credential-id
+      
+  deploy:
     runs-on: ubuntu-latest
     needs: push-docker-image
     steps:
-      - name: Push code to GitHub
-        uses: actions/setup-git@v2
-        with:
-          user-name: 'inyouk'
-          user-email: 'alonstani95@gmail.com'
-
-      - name: Commit and push changes to Git
+      - name: set up ssh key
         run: |
-          cd /home/runner/work/flask-app/flask-app
-          if [ -n "$(git status --porcelain)" ]; then
-            git add .
-            git commit -m "Automated commit from GitHub Actions"
-            git push https://${{ secrets.GIT_USERNAME }}:${{ secrets.GIT_PASSWORD }}@${GIT_REPO_URL.replace('https://', '')} ${BRANCH_NAME}
-          else
-            echo "No changes to commit."
-          fi
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 54.221.192.104 >> ~/.ssh/known_hosts
+        env:
+          EC2_HOST: 54.221.192.104
+      - name: SSH and deploy to EC2 using Docker Compose
+        run: |
+         ssh -i /c/users/user/.ssh/id_rsa ubuntu@54.221.192.104 << 'EOF'
+            # Update the server
+            sudo apt update
+            cd /project/flask-app
+          
+          sudo docker-compose down
+          sudo docker-compose up --build -d 
+          EOF
+
+
+        
+
+    
+
+        
+            
+
+
+
+
+
+
+
+
+
 
 
 
