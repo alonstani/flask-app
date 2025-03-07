@@ -1,0 +1,76 @@
+name: flask-app
+on:
+  push:
+    branches ["main"]
+  pull_request:
+    branches ["main"]
+
+jobs: 
+    build:
+    runs_on: ubuntu-latest
+
+    steps: 
+    - uses: actions/chechout@v4
+
+    - name: set image tag
+      id: tag 
+      run: echo "  IMAGE_TAG=LATEST${{ GITHUB.RUN_NUMBER }}" >> &GITHUB_ENV
+
+    - name: git in to docker hub 
+      uses: docker/login-action@v2
+      with :
+        username: ${{ secrets.docker_username }}
+        password: ${{ secrets.docker_password }}
+
+    - name: build docker image 
+      run: docker build . --file dockerfile --tag inyouk/flask-app:${{ end.image_tag }}
+
+    - name: push the image 
+      run: docker push inyouk/flask-app:${{ env.image_tag }}
+
+    - name: Output image_tag 
+      run: echo "IMAGE_TAG=${{ env.IMAGE_TAG }}" >> $GITHUB_ENV
+
+    test: 
+      runs_on: ubuntu-latest
+    needs: build
+
+      steps: 
+      - name: Run Placeholder Tests
+        run: echo "Running tests... (Placeholder)"
+
+ 
+deploy: 
+    runs-on: ubuntu-latests
+    needs: test
+
+    steps: 
+    - uses: actions/checkout@v4
+
+    - name: set image tag from build job
+      run: echo "IMAGE_TAG=LATEST{{ github.run_number }}" >> $GITHUN_ENV
+
+    - name: update image version in flask-app.yaml
+      run: |
+       sed -i "s|image: inyouk/flask-app:.*|image: inyouk/flask-app:${{ env.IMAGE_TAG }}|" flask-app.yaml
+
+    - name: install sshpass 
+      run: sudo apt-get install -y sshpass 
+
+    - name: transfer flask-app.yaml via scp 
+      env:
+        SCP_PASSWORD: ${{ secrets.SCP_PASSWORD }}
+      run: |
+        sshpass -p "$SCP_PASSWORD" scp -o StrictHostKeyChecking=no flask-app.yaml 
+
+    - name: apply flask-app.yaml on k8s 
+      env:
+        ssh_password: ${{ secrets.SCP_PASSWORD }}
+      run: | 
+        sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no gek ip "kubectl apply -f /home/sela/flask-app.yaml
+        
+
+
+      
+
+      
