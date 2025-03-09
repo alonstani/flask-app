@@ -38,7 +38,7 @@ resource "aws_instance" "web" {
                cd ~/flask-app
                # Build and start the Flask app using Docker Compose
                sleep 10 
-               sudo /usr/local/bin/docker-compose up -d
+               docker-compose up 
                docker ps
   EOF
 }
