@@ -15,18 +15,29 @@ resource "aws_instance" "web" {
 
   user_data = <<-EOF
                #!/bin/bash
+               # Update the instance
                yum update -y
-               amazon-linuxextras install docker-y
+
+               # Install Docker
+               amazon-linux-extras install docker -y
                service docker start
-               usermod -a -G docekr ec2-user
+
+               # Add the ec2-user to the docker group
+               usermod -a -G docker ec2-user
+
+               # Install Docker Compose
                curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                chmod +x /usr/local/bin/docker-compose
-               git clone https://github.com/alonstani/flask-app
-               cd ~/flask-app
+
+               # Clone the Flask app from GitHub
+               git clone https://github.com/alonstani/flask-app /home/ec2-user/flask-app
+
+               # Change to the Flask app directory
+               cd /home/ec2-user/flask-app
+
+               # Build and start the Flask app using Docker Compose
                docker-compose up -d
                EOF
-
 }
-
 
 
