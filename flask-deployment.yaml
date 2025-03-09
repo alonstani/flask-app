@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:
+        app: flask-app
+    spec:
+      containers:
+      - name: flask-app
+        image: inyouk/flask-app  # Replace with your actual image
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: db
+        - name: DB_USER
+          value: root
+        - name: DB_PASSWORD
+          value: '123456'
+        - name: DB_NAME
+          value: db
+        command: ["/bin/sh", "-c", "sleep 5 && python app.py"]
+        resources:
+          requests:
+            memory: "128Mi"  # Minimum amount of memory required
+            cpu: "250m"      # Minimum amount of CPU required
+          limits:
+            memory: "256Mi"  # Maximum amount of memory allowed
+            cpu: "500m"      # Maximum amount of CPU allowed
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-app
+spec:
+  selector:
+    app: flask-app
+  ports:
+    - protocol: TCP
+      port: 80       # Internal port for the service
+      targetPort: 5000 # Port to which the container is listening
+  type: LoadBalancer
+
+
