@@ -36,7 +36,6 @@ resource "aws_instance" "web" {
 
                # Change to the Flask app directory
                cd ~/flask-app
-
                # Build and start the Flask app using Docker Compose
                sudo /usr/local/bin/docker-compose up -d
                
