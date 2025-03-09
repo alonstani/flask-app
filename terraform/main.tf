@@ -33,7 +33,6 @@ resource "aws_instance" "web" {
                git --version
                # Clone the Flask app from GitHub
                git clone https://github.com/alonstani/flask-app /home/ec2-user/flask-app
-
                # Change to the Flask app directory
                cd ~/flask-app
                # Build and start the Flask app using Docker Compose
