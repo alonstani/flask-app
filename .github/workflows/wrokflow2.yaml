@@ -23,7 +23,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y docker-compose
-
+      
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+           username: ${{ secrets.DOCKER_USERNAME }}
+           password: ${{ secrets.DOCKER_PASSWORD }}
+      
       - name: Build Docker Image
         run: |
           docker-compose build
@@ -34,9 +40,18 @@ jobs:
           sleep 10
           curl -f http://localhost:5000 && echo "Test Passed!" || (echo "Test Failed!" && exit 1)
           docker-compose down
+      - name: Push Docker Image
+        run: |
+           echo "Stage: Push Docker Image"
+           docker-compose push
+      - name: Deploy Application
+        run: |
+          docker-compose down
+          docker-compose up -d
 
   # Step 2: Setup Google Cloud SDK and Authenticate
   setup-gcloud:
+    name: Setup google cloud skd
     runs-on: ubuntu-22.04
     needs: build_and_test
     steps:
@@ -57,6 +72,9 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Confirm Active Account
+        run: gcloud auth list --format="value(account)"
 
       - name: Set Project and Region
         run: |
@@ -65,6 +83,7 @@ jobs:
 
   # Step 3: Deploy to GKE Cluster with Terraform
   deploy:
+    name: Deploy to GKE with Terraform
     runs-on: ubuntu-22.04
     needs: setup-gcloud
     steps:
