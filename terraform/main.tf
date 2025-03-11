@@ -44,7 +44,7 @@ resource "random_id" "sg_suffix" {
 
 # AWS EC2 Instance resource
 resource "aws_instance" "web" {
-  ami           = "ami-04b4f1a9cf54c11d0"  # Ubuntu AMI ID for the region, you may need to adjust this if different
+  ami           = "ami-0e1bed4f06a3b463d"  # Ubuntu AMI ID for the region, you may need to adjust this if different
   instance_type = "t2.micro"
   key_name      = "inyouk-key"  # Ensure you have a key pair for SSH access
   security_groups = ["as_instance-sg"]  # Replace with your existing security group
