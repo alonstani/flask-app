@@ -1,4 +1,4 @@
-name: CI/cd Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -14,7 +14,6 @@ env:
   IMAGE_VERSION: ver-${{ github.run_number }}
 
 jobs:
-  # Step 1: Build and Test Docker Images
   build_and_test:
     runs-on: ubuntu-22.04
     steps:
@@ -28,13 +27,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y docker-compose
-      
+
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
            username: ${{ secrets.DOCKER_USERNAME }}
            password: ${{ secrets.DOCKER_PASSWORD }}
-      
+
       - name: Build Docker Image
         run: |
           docker-compose build
@@ -45,18 +44,19 @@ jobs:
           sleep 10
           curl -f http://localhost:5000 && echo "Test Passed!" || (echo "Test Failed!" && exit 1)
           docker-compose down
+
       - name: Push Docker Image
         run: |
-           echo "Stage: Push Docker Image"
-           docker-compose push
+          echo "Stage: Push Docker Image"
+          docker-compose push
+
       - name: Deploy Application
         run: |
           docker-compose down
           docker-compose up -d
 
-  # Step 2: Setup Google Cloud SDK and Authenticate
   setup-gcloud:
-    name: Setup google cloud skd
+    name: Setup google cloud sdk
     runs-on: ubuntu-22.04
     needs: build_and_test
     steps:
@@ -77,7 +77,7 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-      
+
       - name: Confirm Active Account
         run: gcloud auth list --format="value(account)"
 
@@ -99,6 +99,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
+
       - name: Install kubectl (Google Cloud)
         run: |
           curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -121,9 +122,7 @@ jobs:
 
       - name: Verify Plugin Installation
         run: gke-gcloud-auth-plugin --version
- 
 
-  # Step 3: Deploy to GKE Cluster with Terraform
   deploy:
     name: Deploy to GKE with Terraform
     runs-on: ubuntu-22.04
@@ -131,31 +130,30 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: create GCP Credential file 
+
+      - name: Create GCP Credential file
         run: |
           echo '${{ secrets.GCP_SA_KEY }}' > gcp-key.json
-          
+
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
-       
+
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
-      
+
       - name: Install GKE Auth Plugin
         run: gcloud components install gke-gcloud-auth-plugin
-         
+
       - name: Verify Plugin Installation
         run: gke-gcloud-auth-plugin --version
-          
-      
-      
+
       - name: Install Terraform
         run: |
           curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo tee /etc/apt/trusted.gpg.d/hashicorp.asc
@@ -167,35 +165,15 @@ jobs:
 
       - name: Clone the repo and get to the terraform folder
         run: |
-           rm -rf flask-app
-           git clone https://github.com/alonstani/flask-app.git
-           cd flask-app/terraform
-           ls  
+          rm -rf flask-app
+          git clone https://github.com/alonstani/flask-app.git
+          cd flask-app/terraform
+          ls
 
-  terraform:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Step 1: Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      # Step 2: Set up GCP credentials
-      - name: Set up GCP Credentials
-        run: |
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /tmp/gcp_credentials.json
-          export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp_credentials.json"
-
-      # Step 3: Change directory to the terraform folder
-      - name: Navigate to terraform directory
-        run: cd flask-app/terraform
-
-      # Step 4: Initialize Terraform
       - name: Initialize Terraform
         run: terraform init
         working-directory: flask-app/terraform
 
-      # Step 5: Apply Terraform Plan
       - name: Apply Terraform Plan
         env:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
@@ -207,24 +185,3 @@ jobs:
           terraform apply -auto-approve
         working-directory: flask-app/terraform
 
-
-         
-      - name: Install Helm
-        run: |
-          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-          chmod +x get_helm.sh
-          ./get_helm.sh
-          helm version 
-
-      - name: Get GKE Credentials
-        run: |
-          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} --region ${{ secrets.GKE_CLUSTER_REGION }}
-
-      - name: Clone Flask App Chart Repository
-        run: |
-          git clone https://github.com/alonstani/flask-app.git
-          cd flask-app/flask-app-chart  # Change into the flask-app-chart directory
-
-      - name: Deploy Flask App using Helm
-        run: |
-          helm upgrade --install my-app
