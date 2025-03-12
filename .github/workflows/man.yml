@@ -181,9 +181,11 @@ jobs:
 
       - name: Clone the repo and get to the terraform folder
         run: |
-          git clone https://github.com/alonstani/flask-app.git
-          cd flask-app/terraform
-          ls  # Verify if terraform.tfvars exists
+           rm -rf flask-app
+           git clone https://github.com/alonstani/flask-app.git
+           cd flask-app/terraform
+           ls  
+
 
       - name: Initialize Terraform
         run: |
