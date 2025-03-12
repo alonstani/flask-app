@@ -1,21 +1,19 @@
 provider "google" {
-  credentials = jsondecode(var.gcp_credentials_json)  # Pass the content as JSON
+  credentials = jsondecode(var.gcp_credentials_json)  # Use the new gcp_credentials_json variable
   project     = var.gcp_project_id
   region      = var.gke_cluster_region
 }
+
 variable "gcp_credentials_json" {
   description = "GCP credentials in JSON format"
   type        = string
 }
+
 variable "gcp_project_id" {
-  description = "gcp project id"
+  description = "GCP project ID"
   type        = string
 }
 
-variable "gcp_credentials_path" {
-  description = "gcp_credentials_path"
-  type        = string
-}
 variable "gke_cluster_region" {
   description = "The region where the GKE cluster is located"
   type        = string
@@ -26,10 +24,10 @@ variable "gke_cluster_name" {
   type        = string
 }
 
-
+# The rest of your Terraform configuration stays the same.
 resource "google_container_cluster" "primary" {
-  name     = var.gke_cluster_name         # Use the cluster name variable
-  location = var.gke_cluster_region      # Use the region varia
+  name     = var.gke_cluster_name
+  location = var.gke_cluster_region
 
   remove_default_node_pool = true
   initial_node_count       = 1
@@ -42,7 +40,7 @@ resource "google_container_node_pool" "primary_nodes" {
   node_count = 1
 
   node_config {
-    machine_type = "e2-standard-2" 
-    disk_type = "pd-standard"
+    machine_type = "e2-standard-2"
+    disk_type    = "pd-standard"
   }
 }
