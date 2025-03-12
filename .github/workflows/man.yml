@@ -180,6 +180,14 @@ jobs:
         run: |
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /tmp/gcp_credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp_credentials.json"
+          cat /tmp/gcp_credentials.json
+      
+      - name: Set up GCP Credentials
+        run: |
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /tmp/gcp_credentials.json
+          chmod 600 /tmp/gcp_credentials.json  # Secure the file
+          export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp_credentials.json"
+
 
       - name: Initialize Terraform
         run: |
@@ -209,7 +217,4 @@ jobs:
 
       - name: Deploy Flask App using Helm
         run: |
-          helm upgrade --install my-app 
-      
-      - name: Restart Deployment
-        run: kubectl rollout restart deployment/my-app
+          helm upgrade --install my-app
