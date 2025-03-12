@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 env:
   # Dynamically generate a version tag for each run, e.g. ver-12, ver-13, etc.
