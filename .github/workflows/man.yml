@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+
 env:
   # Dynamically generate a version tag for each run, e.g. ver-12, ver-13, etc.
   IMAGE_VERSION: ver-${{ github.run_number }}
