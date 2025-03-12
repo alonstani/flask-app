@@ -1,7 +1,9 @@
 provider "google" {
+  credentials = file(var.gcp_credentials_path)  # Should point to /tmp/gcp_credentials.json
   project     = var.gcp_project_id
-  credentials = file(var.gcp_credentials_path)
-  region      = var.gke_cluster_region  # Use region instead of zone
+  region      = var.gke_cluster_region
+}
+
 }
 variable "gcp_project_id" {
   description = "gcp project id"
