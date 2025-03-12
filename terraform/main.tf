@@ -4,7 +4,6 @@ provider "google" {
   region      = var.gke_cluster_region
 }
 
-}
 variable "gcp_project_id" {
   description = "gcp project id"
   type        = string
