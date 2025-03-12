@@ -123,6 +123,7 @@ jobs:
       - name: Verify Plugin Installation
         run: gke-gcloud-auth-plugin --version
 
+  
   deploy:
     name: Deploy to GKE with Terraform
     runs-on: ubuntu-22.04
@@ -133,7 +134,7 @@ jobs:
 
       - name: Create GCP Credential file
         run: |
-          echo '${{ secrets.GCP_SA_KEY }}' > gcp-key.json
+          echo '${{ secrets.GCP_SA_KEY }}' > /tmp/gcp-key.json
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
@@ -179,9 +180,10 @@ jobs:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_gke_cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
           TF_VAR_gke_cluster_region: ${{ secrets.GKE_CLUSTER_REGION }}
-          TF_VAR_gcp_credentials_path: /tmp/gcp_credentials.json
+          TF_VAR_gcp_credentials_json: ${{ secrets.GCP_SA_KEY }}  # Pass the credentials directly to Terraform
         run: |
           terraform plan
           terraform apply -auto-approve
         working-directory: flask-app/terraform
+
 
