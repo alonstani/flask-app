@@ -170,6 +170,15 @@ jobs:
           git clone https://github.com/alonstani/flask-app.git
           cd flask-app/terraform  # Change into the terraform directory
 
+      - name: Check current working directory
+        run: |
+          pwd  # Check if we are in the correct directory
+      
+      - name: Set up GCP Credentials
+        run: |
+          echo "${{ secrets.GCP_SA_KEY }}" > /tmp/gcp_credentials.json
+          export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp_credentials.json"
+
       - name: Initialize Terraform
         run: |
           cd flask-app/terraform  # Ensure we are in the correct directory
@@ -178,7 +187,7 @@ jobs:
       - name: Apply Terraform Plan
         run: |
           cd flask-app/terraform  # Ensure we are in the correct directory
-          pwd
+          terraform plan -var-file=terraform.tfvars
           terraform apply -auto-approve -var-file=terraform.tfvars
       - name: Install Helm
         run: |
