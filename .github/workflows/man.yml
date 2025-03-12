@@ -179,7 +179,7 @@ jobs:
         run: |
           cd flask-app/terraform  # Ensure we are in the correct directory
           terraform plan
-          terraform apply -auto-approve
+          terraform apply -auto-approve -var-file=terraform.tfvars
       - name: Install Helm
         run: |
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
