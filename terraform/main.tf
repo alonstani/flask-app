@@ -1,9 +1,12 @@
 provider "google" {
-  credentials = file(var.gcp_credentials_path)  # Use the path variable for credentials
-  project     = var.gcp_project_id             # Use the project variable
-  region      = var.gke_cluster_region         # Use the region variable
+  credentials = jsondecode(var.gcp_credentials_json)  # Pass the content as JSON
+  project     = var.gcp_project_id
+  region      = var.gke_cluster_region
 }
-
+variable "gcp_credentials_json" {
+  description = "GCP credentials in JSON format"
+  type        = string
+}
 variable "gcp_project_id" {
   description = "gcp project id"
   type        = string
