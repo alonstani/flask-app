@@ -188,15 +188,19 @@ jobs:
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /tmp/gcp_credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp_credentials.json"
 
+      - name: Navigate to terraform directory
+        run: cd flask-app/terraform
+
       - name: Apply Terraform Plan
         env:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_gke_cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
           TF_VAR_gke_cluster_region: ${{ secrets.GKE_CLUSTER_REGION }}
-          TF_VAR_gcp_credentials_path: /tmp/gcp_credentials.json  # Path to the GCP credentials JSON file
+          TF_VAR_gcp_credentials_path: /tmp/gcp_credentials.json
         run: |
-          terraform plan
+          terraform init
           terraform apply -auto-approve
+
 
          
       - name: Install Helm
