@@ -1,7 +1,7 @@
 provider "google" {
-  credentials = file("/tmp/gcp_credentials.json")  # Should point to /tmp/gcp_credentials.json
-  project     = "inyoukproject"
-  region      = "us-west1-b"
+  credentials = file(var.gcp_credentials_path)  # Use the path variable for credentials
+  project     = var.gcp_project_id             # Use the project variable
+  region      = var.gke_cluster_region         # Use the region variable
 }
 
 variable "gcp_project_id" {
@@ -23,9 +23,10 @@ variable "gke_cluster_name" {
   type        = string
 }
 
+
 resource "google_container_cluster" "primary" {
-  name     = "my-cluster"
-  location = var.gke_cluster_region
+  name     = var.gke_cluster_name         # Use the cluster name variable
+  location = var.gke_cluster_region      # Use the region varia
 
   remove_default_node_pool = true
   initial_node_count       = 1
