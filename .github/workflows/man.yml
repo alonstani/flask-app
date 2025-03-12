@@ -155,6 +155,12 @@ jobs:
 
       - name: Verify Plugin Installation
         run: gke-gcloud-auth-plugin --version
+      - name: Clone the repo and get to the terraform folder
+        run: |
+         rm -rf flask-app
+         git clone https://github.com/alonstani/flask-app.git
+         cd flask-app/terraform
+         ls  # This will list files in the terraform folder to verify the .tf files exist
 
       - name: Install Terraform
         run: |
@@ -164,13 +170,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install terraform  
           terraform --version
+          working-directory: flask-app/terraform
 
-      - name: Clone the repo and get to the terraform folder
-        run: |
-          rm -rf flask-app
-          git clone https://github.com/alonstani/flask-app.git
-          cd flask-app/terraform
-          ls
+      
 
       - name: Initialize Terraform
         run: terraform init
