@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-flask-app
+spec:
+  replicas: {{ .Values.flask.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-flask-app
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-flask-app
+    spec:
+      containers:
+        - name: flask-app
+          image: "{{ .Values.flask.image.repository }}:{{ .Values.flask.image.tag }}"
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DB_HOST
+              value: "my-app-mysql"  # MySQL service name
+            - name: DB_PORT
+              value: "3306"           # MySQL port
+            - name: DB_NAME
+              value: "db"             # MySQL database name
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: my-app-mysql-secret  # Referencing the secret for the user
+                  key: MYSQL_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-app-mysql-secret  # Referencing the secret for the password
+                  key: MYSQL_PASSWORD
+            - name: PORT
+              value: "5000"           # Flask app port
+          resources:
+            requests:
+              memory: {{ .Values.flask.resources.requests.memory }}
+              cpu: {{ .Values.flask.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.flask.resources.limits.memory }}
+              cpu: {{ .Values.flask.resources.limits.cpu }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-flask-service
+spec:
+  selector:
+    app: {{ .Release.Name }}-flask-app
+  ports:
+    - port: 80
+      targetPort: 5000
+  type: LoadBalancer
+

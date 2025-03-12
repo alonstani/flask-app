@@ -1,0 +1,58 @@
+mysql:
+  replicaCount: 1
+  image:
+    repository: mysql
+    tag: 5.7
+  rootPassword: "123456"   # Root password to be stored as base64 in the Secret
+  database: "db"           # Database name
+  user: "root"             # MySQL username
+  password: "123456"       # MySQL user password
+  service:
+    type: LoadBalancer
+    port: 3306
+    targetPort: 3306
+  volumeMounts:
+    - name: mysql-data
+      mountPath: /var/lib/mysql
+    - name: init-sql
+      mountPath: /docker-entrypoint-initdb.d
+
+flask:
+  image:
+    repository: inyouk/flask-app
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "250m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+  environment:
+    - name: DB_HOST
+      value: "my-app-mysql"  # The MySQL service name
+    - name: DB_PORT
+      value: "3306"          # The MySQL port (default for MySQL)
+    - name: DB_NAME
+      value: "db"            # The name of the database
+    - name: DB_USER
+      valueFrom:
+        secretKeyRef:
+          name: my-app-mysql-secret
+          key: MYSQL_USER   # Referencing the MySQL user from the secret
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: my-app-mysql-secret
+          key: MYSQL_PASSWORD  # Referencing the MySQL password from the secret
+    - name: PORT
+      value: "5000"          # The port on which Flask runs
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 5000
+
+ingress:
+  enabled: false  # You can toggle this based on your needs
