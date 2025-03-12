@@ -201,8 +201,9 @@ jobs:
          TF_VAR_gke_cluster_region: ${{ secrets.GCP_CLUSTER_REGION }}
          TF_VAR_gcp_credentials_path: /tmp/gcp_credentials.json
         run: | 
-         terraform plan  
+         cd flask-app/terraform
          terraform apply -auto-approve 
+         
       - name: Install Helm
         run: |
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
