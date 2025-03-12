@@ -1,8 +1,9 @@
 provider "google" {
-  credentials = jsondecode(var.gcp_credentials_json)  # Use the new gcp_credentials_json variable
+  credentials = file(var.gcp_credentials_json)  # Use the file function to load the credentials
   project     = var.gcp_project_id
   region      = var.gke_cluster_region
 }
+
 
 variable "gcp_credentials_json" {
   description = "GCP credentials in JSON format"
