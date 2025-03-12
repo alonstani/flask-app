@@ -176,19 +176,25 @@ jobs:
       
       - name: Set up GCP Credentials
         run: |
-          echo "${{ secrets.GCP_SA_KEY }}" > /tmp/gcp_credentials.json
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /tmp/gcp_credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp_credentials.json"
+
+      - name: Clone the repo and get to the terraform folder
+        run: |
+          git clone https://github.com/alonstani/flask-app.git
+          cd flask-app/terraform
+          ls  # Verify if terraform.tfvars exists
 
       - name: Initialize Terraform
         run: |
-          cd flask-app/terraform  # Ensure we are in the correct directory
+          cd flask-app/terraform
           terraform init
 
       - name: Apply Terraform Plan
         run: |
-          cd flask-app/terraform  # Ensure we are in the correct directory
-          terraform plan -var-file=terraform.tfvars
-          terraform apply -auto-approve -var-file=terraform.tfvars
+          cd flask-app/terraform
+          terraform plan -var="gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" -var="gke_cluster_region=${{ secrets.GCP_CLUSTER_REGION }}" -var="gke_cluster_name=${{ secrets.GCP_CLUSTER_NAME }}" -var="gcp_credentials_path=/tmp/gcp_credentials.json"
+          terraform apply -auto-approve -var="gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" -var="gke_cluster_region=${{ secrets.GCP_CLUSTER_REGION }}" -var="gke_cluster_name=${{ secrets.GCP_CLUSTER_NAME }}" -var="gcp_credentials_path=/tmp/gcp_credentials.json"
       - name: Install Helm
         run: |
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
