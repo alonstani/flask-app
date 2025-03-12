@@ -178,7 +178,7 @@ jobs:
       - name: Apply Terraform Plan
         run: |
           cd flask-app/terraform  # Ensure we are in the correct directory
-          terraform plan
+          pwd
           terraform apply -auto-approve -var-file=terraform.tfvars
       - name: Install Helm
         run: |
