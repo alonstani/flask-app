@@ -195,10 +195,14 @@ jobs:
           terraform init
 
       - name: Apply Terraform Plan
-        run: |
-          cd flask-app/terraform
-          terraform plan -var="gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" -var="gke_cluster_region=${{ secrets.GCP_CLUSTER_REGION }}" -var="gke_cluster_name=${{ secrets.GCP_CLUSTER_NAME }}" -var="gcp_credentials_path=/tmp/gcp_credentials.json"
-          terraform apply -auto-approve -var="gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" -var="gke_cluster_region=${{ secrets.GCP_CLUSTER_REGION }}" -var="gke_cluster_name=${{ secrets.GCP_CLUSTER_NAME }}" -var="gcp_credentials_path=/tmp/gcp_credentials.json"
+        env: 
+         TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+         TF_VAR_gke_cluster_name: ${{ secrets.GCP_CLUSTER_NAME }}
+         TF_VAR_gke_cluster_region: ${{ secrets.GCP_CLUSTER_REGION }}
+         TF_VAR_gcp_credentials_path: /tmp/gcp_credentials.json
+        run: | 
+         terraform plan -auto-approve 
+         terraform apply -auto-approve 
       - name: Install Helm
         run: |
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
