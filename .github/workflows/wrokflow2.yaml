@@ -1,74 +1,120 @@
-name: flask-app
+name: CI/CD Pipeline
+
 on:
   push:
-    branches ["main"]
+    branches:
+      - main
   pull_request:
-    branches ["main"]
+    branches:
+      - main
 
-jobs: 
-    build:
-    runs_on: ubuntu-latest
+jobs:
+  # Step 1: Build and Test Docker Images
+  build_and_test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    steps: 
-    - uses: actions/chechout@v4
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
 
-    - name: set image tag
-      id: tag 
-      run: echo "  IMAGE_TAG=LATEST${{ GITHUB.RUN_NUMBER }}" >> &GITHUB_ENV
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+      
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+           username: ${{ secrets.DOCKER_USERNAME }}
+           password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build Docker Image
+        run: |
+          docker-compose build
 
-    - name: git in to docker hub 
-      uses: docker/login-action@v2
-      with :
-        username: ${{ secrets.docker_username }}
-        password: ${{ secrets.docker_password }}
+      - name: Test Application
+        run: |
+          docker-compose up -d
+          sleep 10
+          curl -f http://localhost:5000 && echo "Test Passed!" || (echo "Test Failed!" && exit 1)
+          docker-compose down
+      - name: Push Docker Image
+        run: |
+           echo "Stage: Push Docker Image"
+           docker-compose push
+      - name: Deploy Application
+        run: |
+          docker-compose down
+          docker-compose up -d
 
-    - name: build docker image 
-      run: docker build . --file dockerfile --tag inyouk/flask-app:${{ end.image_tag }}
+  # Step 2: Setup Google Cloud SDK and Authenticate
+  setup-gcloud:
+    name: Setup google cloud skd
+    runs-on: ubuntu-22.04
+    needs: build_and_test
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: push the image 
-      run: docker push inyouk/flask-app:${{ env.image_tag }}
+      - name: Install Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
 
-    - name: Output image_tag 
-      run: echo "IMAGE_TAG=${{ env.IMAGE_TAG }}" >> $GITHUB_ENV
+      - name: Verify gcloud Installation
+        run: gcloud --version
 
-    test: 
-      runs_on: ubuntu-latest
-    needs: build
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Confirm Active Account
+        run: gcloud auth list --format="value(account)"
 
-      steps: 
-      - name: Run Placeholder Tests
-        run: echo "Running tests... (Placeholder)"
+      - name: Set Project and Region
+        run: |
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud config set compute/region ${{ secrets.GKE_CLUSTER_REGION }}
 
- 
-deploy: 
-    runs-on: ubuntu-latests
-    needs: test
+  # Step 3: Deploy to GKE Cluster with Terraform
+  deploy:
+    name: Deploy to GKE with Terraform
+    runs-on: ubuntu-22.04
+    needs: setup-gcloud
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    steps: 
-    - uses: actions/checkout@v4
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: set image tag from build job
-      run: echo "IMAGE_TAG=LATEST{{ github.run_number }}" >> $GITHUN_ENV
+      - name: Install Terraform
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-get update && sudo apt-get install terraform
 
-    - name: update image version in flask-app.yaml
-      run: |
-       sed -i "s|image: inyouk/flask-app:.*|image: inyouk/flask-app:${{ env.IMAGE_TAG }}|" flask-app.yaml
+      - name: Initialize Terraform
+        run: terraform init
 
-    - name: install sshpass 
-      run: sudo apt-get install -y sshpass 
+      - name: Apply Terraform Plan
+        run: |
+          terraform plan
+          terraform apply -auto-approve
 
-    - name: transfer flask-app.yaml via scp 
-      env:
-        SCP_PASSWORD: ${{ secrets.SCP_PASSWORD }}
-      run: |
-        sshpass -p "$SCP_PASSWORD" scp -o StrictHostKeyChecking=no flask-app.yaml 
+      - name: Get GKE Credentials
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} --region ${{ secrets.GKE_CLUSTER_REGION }}
 
-    - name: apply flask-app.yaml on k8s 
-      env:
-        ssh_password: ${{ secrets.SCP_PASSWORD }}
-      run: | 
-        sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no gek ip "kubectl apply -f /home/sela/flask-app.yaml
-        
+      - name: Deploy to GKE with kubectl
+        run: |
+          kubectl apply -f k8s/  # Replace this with your actual Kubernetes YAML files
 
 
       
