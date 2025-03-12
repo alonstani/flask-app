@@ -23,7 +23,17 @@ variable "gke_cluster_region" {
 variable "gke_cluster_name" {
   description = "The name of the GKE cluster"
   type        = string
+
+  validation {
+    condition = (
+      length(var.gke_cluster_name) >= 3 &&
+      length(var.gke_cluster_name) <= 40 &&
+      can(regex("^[a-z]([a-z0-9-]*[a-z0-9])?$", var.gke_cluster_name))
+    )
+    error_message = "The GKE cluster name must be 3-40 characters long, start with a lowercase letter, and only contain lowercase letters, numbers, and hyphens."
+  }
 }
+
 
 # The rest of your Terraform configuration stays the same.
 resource "google_container_cluster" "primary" {
