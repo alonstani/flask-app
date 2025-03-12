@@ -167,8 +167,10 @@ jobs:
       
       - name: Clone the repo and get to the terraform folder
         run: |
-          git clone https://github.com/alonstani/flask-app.git
-          cd flask-app/terraform  # Change into the terraform directory
+           rm -rf flask-app
+           git clone https://github.com/alonstani/flask-app.git
+           cd flask-app/terraform
+           ls  
 
       - name: Check current working directory
         run: |
@@ -178,14 +180,6 @@ jobs:
         run: |
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /tmp/gcp_credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp_credentials.json"
-
-      - name: Clone the repo and get to the terraform folder
-        run: |
-           rm -rf flask-app
-           git clone https://github.com/alonstani/flask-app.git
-           cd flask-app/terraform
-           ls  
-
 
       - name: Initialize Terraform
         run: |
