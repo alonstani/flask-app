@@ -84,7 +84,7 @@ jobs:
       - name: Set Project and Region
         run: |
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-          gcloud config set compute/region ${{ secrets.GKE_CLUSTER_REGION }}
+          gcloud config set compute/region ${{ secrets.GCP_CLUSTER_REGION }}
 
   configure-kubectl:
     name: Configure kubectl for GKE
