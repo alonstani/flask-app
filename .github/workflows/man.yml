@@ -181,8 +181,9 @@ jobs:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_gke_cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
           TF_VAR_gke_cluster_region: ${{ secrets.GKE_CLUSTER_REGION }}
-          TF_VAR_gcp_credentials_json: ${{ secrets.GCP_SA_KEY }}  # Pass the credentials directly to Terraform
+          TF_VAR_gcp_credentials_json: /tmp/gcp-key.json  # Pass the file path
         run: |
-          terraform plan
-          terraform apply -auto-approve
-        working-directory: flask-app/terraform
+         terraform plan
+         terraform apply -auto-approve
+         working-directory: flask-app/terraform
+
