@@ -201,7 +201,7 @@ jobs:
          TF_VAR_gke_cluster_region: ${{ secrets.GCP_CLUSTER_REGION }}
          TF_VAR_gcp_credentials_path: /tmp/gcp_credentials.json
         run: | 
-         terraform plan -auto-approve 
+         terraform plan  
          terraform apply -auto-approve 
       - name: Install Helm
         run: |
