@@ -31,8 +31,8 @@ jobs:
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
-           username: ${{ secrets.DOCKER_USERNAME }}
-           password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
         run: |
@@ -56,7 +56,7 @@ jobs:
           docker-compose up -d
 
   setup-gcloud:
-    name: Setup google cloud sdk
+    name: Setup Google Cloud SDK
     runs-on: ubuntu-22.04
     needs: build_and_test
     steps:
@@ -123,8 +123,6 @@ jobs:
       - name: Verify Plugin Installation
         run: gke-gcloud-auth-plugin --version
 
-  
- 
   deploy:
     name: Deploy to GKE with Terraform
     runs-on: ubuntu-22.04
@@ -155,12 +153,13 @@ jobs:
 
       - name: Verify Plugin Installation
         run: gke-gcloud-auth-plugin --version
+
       - name: Clone the repo and get to the terraform folder
         run: |
-         rm -rf flask-app
-         git clone https://github.com/alonstani/flask-app.git
-         cd flask-app/terraform
-         ls  # This will list files in the terraform folder to verify the .tf files exist
+          rm -rf flask-app
+          git clone https://github.com/alonstani/flask-app.git
+          cd flask-app/terraform
+          ls  # This will list files in the terraform folder to verify the .tf files exist
 
       - name: Install Terraform
         run: |
@@ -170,9 +169,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install terraform  
           terraform --version
-          working-directory: flask-app/terraform
-
-      
+        working-directory: flask-app/terraform
 
       - name: Initialize Terraform
         run: terraform init
@@ -182,10 +179,9 @@ jobs:
         env:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_gke_cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
-          TF_VAR_gke_cluster_region: ${{ secrets.GKE_CLUSTER_REGION }}
+          TF_VAR_gke_cluster_region: ${{ secrets.GCP_CLUSTER_REGION }}
           TF_VAR_gcp_credentials_json: /tmp/gcp-key.json  # Pass the file path
         run: |
          terraform plan
          terraform apply -auto-approve
-         working-directory: flask-app/terraform
-
+        working-directory: flask-app/terraform
