@@ -164,12 +164,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install terraform  
           terraform --version
-
+      
+      - name: Clone the repo and get to the terraform folder
+        run: |
+          git clone https://github.com/alonstani/flask-app.git
+          cd flask-app/terraform  # Change into the terraform directory
 
       - name: Initialize Terraform
-        run: terraform init
+        run: |
+          cd flask-app/terraform  # Ensure we are in the correct directory
+          terraform init
+
       - name: Apply Terraform Plan
         run: |
+          cd flask-app/terraform  # Ensure we are in the correct directory
           terraform plan
           terraform apply -auto-approve
       - name: Install Helm
