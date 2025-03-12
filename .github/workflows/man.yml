@@ -3,10 +3,11 @@ name: CI/cd Pipeline
 on:
   push:
     branches:
-      - main
+      - master      
   pull_request:
     branches:
-      - main
+      - master
+  workflow_dispatch:
 
 env:
   # Dynamically generate a version tag for each run, e.g. ver-12, ver-13, etc.
@@ -83,7 +84,7 @@ jobs:
       - name: Set Project and Region
         run: |
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-          gcloud config set compute/region ${{ secrets.GKE_CLUSTER_REGION }}
+          gcloud config set compute/region ${{ secrets.GCP_CLUSTER_REGION }}
 
   configure-kubectl:
     name: Configure kubectl for GKE
@@ -120,7 +121,7 @@ jobs:
 
       - name: Verify Plugin Installation
         run: gke-gcloud-auth-plugin --version
-
+ 
 
   # Step 3: Deploy to GKE Cluster with Terraform
   deploy:
@@ -157,15 +158,39 @@ jobs:
       
       - name: Install Terraform
         run: |
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-get update && sudo apt-get install terraform
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo tee /etc/apt/trusted.gpg.d/hashicorp.asc
+          sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
+          sudo add-apt-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update
+          sudo apt-get install terraform  
+          terraform --version
+      
+      - name: Clone the repo and get to the terraform folder
+        run: |
+           rm -rf flask-app
+           git clone https://github.com/alonstani/flask-app.git
+           cd flask-app/terraform
+           ls  
+
+      - name: Check current working directory
+        run: |
+          pwd  # Check if we are in the correct directory
+      
+      - name: Set up GCP Credentials
+        run: |
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /tmp/gcp_credentials.json
+          export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp_credentials.json"
 
       - name: Initialize Terraform
-        run: terraform init
+        run: |
+          cd flask-app/terraform
+          terraform init
+
       - name: Apply Terraform Plan
         run: |
-          terraform plan
-          terraform apply -auto-approve
+          cd flask-app/terraform
+          terraform plan -var="gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" -var="gke_cluster_region=${{ secrets.GCP_CLUSTER_REGION }}" -var="gke_cluster_name=${{ secrets.GCP_CLUSTER_NAME }}" -var="gcp_credentials_path=/tmp/gcp_credentials.json"
+          terraform apply -auto-approve -var="gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" -var="gke_cluster_region=${{ secrets.GCP_CLUSTER_REGION }}" -var="gke_cluster_name=${{ secrets.GCP_CLUSTER_NAME }}" -var="gcp_credentials_path=/tmp/gcp_credentials.json"
       - name: Install Helm
         run: |
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
