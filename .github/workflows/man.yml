@@ -124,6 +124,7 @@ jobs:
         run: gke-gcloud-auth-plugin --version
 
   
+ 
   deploy:
     name: Deploy to GKE with Terraform
     runs-on: ubuntu-22.04
@@ -185,5 +186,3 @@ jobs:
           terraform plan
           terraform apply -auto-approve
         working-directory: flask-app/terraform
-
-
