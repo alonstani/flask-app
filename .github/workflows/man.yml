@@ -164,7 +164,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install terraform  
           terraform --version
-      
+
       - name: Clone the repo and get to the terraform folder
         run: |
            rm -rf flask-app
@@ -172,25 +172,30 @@ jobs:
            cd flask-app/terraform
            ls  
 
-      - name: Check current working directory
-        run: |
-          pwd  # Check if we are in the correct directory
-      
+  terraform:
+    runs-on: ubuntu-latest
 
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Initialize Terraform
-        run: |
-          cd flask-app/terraform
-          terraform init
-
+      # Step 2: Set up GCP credentials
       - name: Set up GCP Credentials
         run: |
           echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /tmp/gcp_credentials.json
           export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp_credentials.json"
 
+      # Step 3: Change directory to the terraform folder
       - name: Navigate to terraform directory
         run: cd flask-app/terraform
 
+      # Step 4: Initialize Terraform
+      - name: Initialize Terraform
+        run: terraform init
+        working-directory: flask-app/terraform
+
+      # Step 5: Apply Terraform Plan
       - name: Apply Terraform Plan
         env:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
@@ -198,8 +203,9 @@ jobs:
           TF_VAR_gke_cluster_region: ${{ secrets.GKE_CLUSTER_REGION }}
           TF_VAR_gcp_credentials_path: /tmp/gcp_credentials.json
         run: |
-          terraform init
+          terraform plan
           terraform apply -auto-approve
+        working-directory: flask-app/terraform
 
 
          
